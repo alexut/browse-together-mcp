@@ -158,6 +158,42 @@ import { describe, it } from "std/testing/bdd";
 
 - Use Jest-like `describe`, `it`, and lifecycle hooks (`beforeEach`, `afterEach`, etc.) from `std/testing/bdd`.
 
+## Standard Libraries
+
+### Command Line Arguments
+
+Deno provides both built-in functionality and standard library modules for working with command line arguments:
+
+- **Basic access**: Use `Deno.args` to access raw command line arguments as an array
+- **Structured parsing**: Use `std/cli` module's `parseArgs` function to convert arguments into structured data. The current version is `@std/cli@1.0.15`.
+
+#### Using parseArgs
+
+The `parseArgs` function converts command line flags like `--foo=bar` into structured objects:
+
+```typescript
+import { parseArgs } from "jsr:@std/cli/parse-args";
+
+const flags = parseArgs(Deno.args, {
+  boolean: ["help", "color"],     // Define boolean flags
+  string: ["version"],            // Define string flags
+  default: { color: true },         // Set default values
+  negatable: ["color"],           // Allow --no-prefix (e.g., --no-color)
+});
+
+console.log("Help flag:", flags.help);
+console.log("Version:", flags.version);
+console.log("Color enabled:", flags.color);
+console.log("Non-flag arguments:", flags._);  // Arguments not parsed as flags
+```
+
+**Note**: This implementation is based on `minimist` and is not compatible with Node.js `util.parseArgs()`.
+
+#### Additional Resources
+
+- [Deno.args API documentation](https://deno.land/api?unstable=&s=Deno.args)
+- [@std/cli module documentation](https://jsr.io/@std/cli)
+
 ## Type Safety
 
 ### Match Dependency Versions Exactly
