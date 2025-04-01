@@ -1,5 +1,7 @@
 # Initial Design Decisions
 
+**(Note:** The project structure described below reflects the initial phase focused on `cli.ts`. The project has since evolved to include the `browser.ts` proxy service and `types.ts`, making the structure more complex than depicted here. See the main `README.md` for the current overview.)**
+
 ## Project Structure
 
 We've chosen a minimal, single-file approach for our TypeScript CLI tool:
