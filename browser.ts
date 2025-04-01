@@ -2,11 +2,7 @@
 import { chromium } from "playwright";
 import xdg from "@folder/xdg";
 import { join } from "std/path";
-import type { 
-  BrowserCommand,
-  BrowserContextType,
-  PageType
-} from "./types.ts";
+import type { BrowserCommand, BrowserContextType, PageType } from "./types.ts";
 import { browserCommandSchema } from "./types.ts";
 
 // Single browser context and page management
@@ -32,9 +28,7 @@ async function setupBrowser() {
     headless: false,
     viewport: null,
     ignoreDefaultArgs: ["--enable-automation"],
-    args: [
-      "--no-default-browser-check",
-    ],
+    args: ["--no-default-browser-check"],
   });
 
   // Create default page
@@ -47,19 +41,43 @@ async function setupBrowser() {
 }
 
 // Get or create a page with the given ID
+// Function to check if a page is still valid and connected
+async function isPageValid(page: PageType): Promise<boolean> {
+  try {
+    // Perform a minimal evaluation to check if the page is still connected
+    await page.evaluate('1');
+    return true;
+  } catch (_error) {
+    return false;
+  }
+}
+
 async function getOrCreatePage(pageId: string) {
   if (!browserContext) {
     throw new Error("Browser context not initialized");
   }
 
-  // Return existing page if it exists
+  // Check if the page exists and is still connected
   if (pages[pageId]) {
-    return pages[pageId];
+    if (await isPageValid(pages[pageId])) {
+      return pages[pageId];
+    }
+    
+    console.log(`Page ${pageId} was closed externally, cleaning up reference`);
+    delete pages[pageId];
+    // Continue to create a new page
   }
 
   // Create a new page
   console.log(`Creating new page: ${pageId}`);
   const page = await browserContext.newPage();
+  
+  // Add event listener for close events
+  page.on('close', () => {
+    console.log(`Page ${pageId} closed event detected`);
+    delete pages[pageId];
+  });
+  
   pages[pageId] = page;
   return page;
 }
@@ -81,19 +99,16 @@ async function executeCommand(pageId: string, command: BrowserCommand) {
     // With our discriminated union, TypeScript knows which properties exist for each action
     switch (command.action) {
       case "goto":
-        // TypeScript knows command.url exists because of our schema
         return {
           success: true,
           result: await page.goto(command.url, command.params),
         };
 
       case "click":
-        // TypeScript knows command.selector exists because of our schema
         await page.click(command.selector, command.params);
         return { success: true };
 
       case "fill":
-        // TypeScript knows command.selector and command.text exist because of our schema
         await page.fill(command.selector, command.text, command.params);
         return { success: true };
 
@@ -115,7 +130,6 @@ async function executeCommand(pageId: string, command: BrowserCommand) {
         return { success: true, result: await page.title() };
 
       case "evaluate":
-        // TypeScript knows command.params.expression exists because of our schema
         return {
           success: true,
           result: await page.evaluate(command.params.expression),
@@ -223,10 +237,10 @@ Deno.serve({ port }, async (req: Request) => {
 
     try {
       const requestBody = await req.json();
-      
+
       // Validate the request body against our schema
       const parseResult = browserCommandSchema.safeParse(requestBody);
-      
+
       if (!parseResult.success) {
         // If validation fails, return an error response with detailed validation issues
         return new Response(
@@ -238,10 +252,10 @@ Deno.serve({ port }, async (req: Request) => {
           {
             status: 400,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
-      
+
       // Extract the validated command data
       const command = parseResult.data;
       const result = await executeCommand(pageId || "default", command);
