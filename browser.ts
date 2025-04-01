@@ -2,21 +2,12 @@
 import { chromium } from "playwright";
 import xdg from "@folder/xdg";
 import { join } from "std/path";
-
-interface BrowserCommand {
-  action: string;
-  params?: Record<string, unknown>;
-  selector?: string;
-  url?: string;
-  text?: string;
-  timeout?: number;
-}
-
-// Define types for browser context and pages
-type BrowserContextType = Awaited<
-  ReturnType<typeof chromium.launchPersistentContext>
->;
-type PageType = Awaited<ReturnType<BrowserContextType["newPage"]>>;
+import type { 
+  BrowserCommand,
+  BrowserContextType,
+  PageType
+} from "./types.ts";
+import { browserCommandSchema } from "./types.ts";
 
 // Single browser context and page management
 let browserContext: BrowserContextType | null = null;
@@ -86,27 +77,23 @@ async function executeCommand(pageId: string, command: BrowserCommand) {
     // Get or create the page
     const page = await getOrCreatePage(pageId);
 
-    // Execute the requested action
+    // Execute the requested action based on command type
+    // With our discriminated union, TypeScript knows which properties exist for each action
     switch (command.action) {
       case "goto":
-        if (!command.url) throw new Error("URL is required for goto");
+        // TypeScript knows command.url exists because of our schema
         return {
           success: true,
           result: await page.goto(command.url, command.params),
         };
 
       case "click":
-        if (!command.selector) {
-          throw new Error("Selector is required for click");
-        }
+        // TypeScript knows command.selector exists because of our schema
         await page.click(command.selector, command.params);
         return { success: true };
 
       case "fill":
-        if (!command.selector) throw new Error("Selector is required for fill");
-        if (command.text === undefined) {
-          throw new Error("Text is required for fill");
-        }
+        // TypeScript knows command.selector and command.text exist because of our schema
         await page.fill(command.selector, command.text, command.params);
         return { success: true };
 
@@ -128,12 +115,10 @@ async function executeCommand(pageId: string, command: BrowserCommand) {
         return { success: true, result: await page.title() };
 
       case "evaluate":
-        if (!command.params?.expression) {
-          throw new Error("Expression is required for evaluate");
-        }
+        // TypeScript knows command.params.expression exists because of our schema
         return {
           success: true,
-          result: await page.evaluate(command.params.expression as string),
+          result: await page.evaluate(command.params.expression),
         };
 
       case "closePage":
@@ -141,8 +126,13 @@ async function executeCommand(pageId: string, command: BrowserCommand) {
         delete pages[pageId];
         return { success: true };
 
-      default:
-        throw new Error(`Unsupported action: ${command.action}`);
+      default: {
+        // This code should be unreachable due to our Zod validation and TypeScript's exhaustiveness checking
+        // The exhaustive check ensures we've handled all possible action types from our union
+        // We need to cast to unknown first before asserting a type with properties to avoid the TS error
+        const unknownCommand = command as unknown as { action: string };
+        throw new Error(`Unsupported action: ${unknownCommand.action}`);
+      }
     }
   } catch (error) {
     return {
@@ -232,7 +222,28 @@ Deno.serve({ port }, async (req: Request) => {
     const [, pageId] = matches;
 
     try {
-      const command = await req.json() as BrowserCommand;
+      const requestBody = await req.json();
+      
+      // Validate the request body against our schema
+      const parseResult = browserCommandSchema.safeParse(requestBody);
+      
+      if (!parseResult.success) {
+        // If validation fails, return an error response with detailed validation issues
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Invalid command format",
+            issues: parseResult.error.issues,
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          }
+        );
+      }
+      
+      // Extract the validated command data
+      const command = parseResult.data;
       const result = await executeCommand(pageId || "default", command);
 
       return new Response(JSON.stringify(result), {

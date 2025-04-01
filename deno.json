@@ -5,7 +5,8 @@
 		"std/flags": "jsr:@std/flags@0.224.0",
 		"std/fs": "jsr:@std/fs@0.224.0",
 		"std/path": "jsr:@std/path@0.224.0",
-		"std/http-server": "jsr:@std/http-server@0.224.0"
+		"std/http-server": "jsr:@std/http-server@0.224.0",
+		"zod": "npm:zod@^3.22.4"
 	},
 	"tasks": {
 		"start": "deno run --allow-read --lock=deno.lock cli.ts",
