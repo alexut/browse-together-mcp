@@ -1,5 +1,6 @@
 {
 	"imports": {
+		"@canadaduane/ts-env": "jsr:@canadaduane/ts-env@^0.3.3",
 		"@folder/xdg": "npm:@folder/xdg@^4.0.1",
 		"playwright": "npm:playwright@^1.51.1",
 		"std/cli": "jsr:@std/cli@1.0.15",

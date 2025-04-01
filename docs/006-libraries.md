@@ -22,11 +22,20 @@ This project relies on several key external libraries and Deno standard modules.
 *   **Why Chosen:** Used to determine the standard user-specific configuration directory (`~/.config` on macOS/Linux) in a platform-agnostic way. This allows storing the persistent Playwright profile (`playwright/profile`) in a conventional location without hardcoding paths like `~/Library/Application Support` or `~/.config`.
 *   **Usage:** Used in `browser.ts` within `setupBrowser` to find the appropriate directory for the persistent Playwright context (`join(dirs.config, "playwright", "profile")`).
 
+### LogTape (`jsr:@logtape/logtape`)
+
+*   **Purpose:** A structured logging library that provides categorized, leveled logging with customizable sinks and formatters.
+*   **Why Chosen:** Offers hierarchical categories for module-specific logging configuration, structured log records for better analysis, and flexible configuration options for different environments (development, testing, production).
+*   **Usage:** Used throughout the codebase to create namespaced loggers with `getLogger()`, configure logging behavior with `configure()`, and output structured logs with context information. Different configurations are applied based on environment needs.
+
 ## Deno Standard Library (`jsr:@std/...`)
 
 *   **`@std/path`:** Provides utilities for working with file paths (like `join`) in a platform-independent manner. Used in `browser.ts` and `cli.ts`.
 *   **`@std/fs`:** Provides file system utilities like `walk` (used in `cli.ts`) and `ensureDir` (implicitly via `Deno.mkdir({ recursive: true })` in `browser.ts`).
 *   **`@std/flags`:** Used for parsing command-line arguments (used in `cli.ts`).
 *   **`@std/http`:** (Implicit via `Deno.serve`) Deno's native, high-performance HTTP server API used in `browser.ts` to handle incoming API requests.
+*   **`@std/testing/bdd`:** Provides Jest-like testing syntax (`describe`, `it`, `beforeEach`, etc.) for organizing and structuring tests in a behavior-driven development style.
+*   **`@std/assert`:** Contains assertion utilities for verifying expected outcomes in tests, including functions like `assertEquals`, `assertExists`, etc.
+*   **`@std/testing/mock`:** Provides utilities for creating test doubles (spies, mocks, and stubs) to isolate units of code during testing by replacing dependencies with controlled implementations.
 
 Understanding these libraries is key to understanding the project's architecture and capabilities.

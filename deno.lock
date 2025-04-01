@@ -1,7 +1,10 @@
 {
   "version": "4",
   "specifiers": {
+    "jsr:@canadaduane/ts-env@~0.3.3": "0.3.3",
+    "jsr:@std/cli@1.0.15": "1.0.15",
     "jsr:@std/fs@1.0": "1.0.15",
+    "jsr:@std/fs@1.0.15": "1.0.15",
     "jsr:@std/path@1.0.8": "1.0.8",
     "jsr:@std/path@^1.0.8": "1.0.8",
     "npm:@folder/xdg@^4.0.1": "4.0.1",
@@ -9,6 +12,15 @@
     "npm:zod@^3.22.4": "3.24.2"
   },
   "jsr": {
+    "@canadaduane/ts-env@0.3.3": {
+      "integrity": "ccdb6230ad8bca95e0032bb4584f68d99c9dcf49d8d1ff707eb8d81dd5639b18",
+      "dependencies": [
+        "npm:zod"
+      ]
+    },
+    "@std/cli@1.0.15": {
+      "integrity": "e79ba3272ec710ca44d8342a7688e6288b0b88802703f3264184b52893d5e93f"
+    },
     "@std/fs@1.0.15": {
       "integrity": "c083fb479889d6440d768e498195c3fc499d426fbf9a6592f98f53884d1d3f41",
       "dependencies": [
@@ -76,6 +88,7 @@
   },
   "workspace": {
     "dependencies": [
+      "jsr:@canadaduane/ts-env@~0.3.3",
       "jsr:@std/cli@1.0.15",
       "jsr:@std/fs@1.0.15",
       "jsr:@std/http-server@0.224.0",
