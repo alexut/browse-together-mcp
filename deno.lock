@@ -2,6 +2,7 @@
   "version": "4",
   "specifiers": {
     "jsr:@canadaduane/ts-env@~0.3.3": "0.3.3",
+    "jsr:@logtape/logtape@0.9": "0.9.0",
     "jsr:@std/cli@1.0.15": "1.0.15",
     "jsr:@std/fs@1.0": "1.0.15",
     "jsr:@std/fs@1.0.15": "1.0.15",
@@ -17,6 +18,9 @@
       "dependencies": [
         "npm:zod"
       ]
+    },
+    "@logtape/logtape@0.9.0": {
+      "integrity": "aacdeb0e040e5723021bef8b9b8c03ad7cffb5e2146a0024c30814930f6e7c89"
     },
     "@std/cli@1.0.15": {
       "integrity": "e79ba3272ec710ca44d8342a7688e6288b0b88802703f3264184b52893d5e93f"
@@ -89,6 +93,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@canadaduane/ts-env@~0.3.3",
+      "jsr:@logtape/logtape@0.9",
       "jsr:@std/cli@1.0.15",
       "jsr:@std/fs@1.0.15",
       "jsr:@std/http-server@0.224.0",

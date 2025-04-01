@@ -4,6 +4,12 @@ import xdg from "@folder/xdg";
 import { join } from "std/path";
 import type { BrowserCommand, BrowserContextType, PageType } from "./types.ts";
 import { browserCommandSchema } from "./types.ts";
+import { setupLogging, getLogger } from "./logging.ts";
+import config from "./config.ts";
+
+// Initialize logging early
+await setupLogging();
+const logger = getLogger("browser");
 
 // Single browser context and page management
 let browserContext: BrowserContextType | null = null;
@@ -22,7 +28,7 @@ async function setupBrowser() {
   // Create the dir, if it doesn't exist
   await Deno.mkdir(configDir, { recursive: true });
 
-  console.log("Starting browser context...");
+  logger.info("Starting browser context");
 
   browserContext = await chromium.launchPersistentContext(configDir, {
     headless: false,
@@ -35,7 +41,7 @@ async function setupBrowser() {
   const defaultPage = await browserContext.newPage();
   pages.default = defaultPage;
 
-  console.log("Browser initialized with default page");
+  logger.info("Browser initialized with default page");
 
   return browserContext;
 }
@@ -195,22 +201,22 @@ async function shutdown() {
 
 // Register shutdown hook for graceful termination
 Deno.addSignalListener("SIGINT", async () => {
-  console.log("Received SIGINT signal");
+  logger.info("Received SIGINT signal");
   await shutdown();
 });
 
 Deno.addSignalListener("SIGTERM", async () => {
-  console.log("Received SIGTERM signal");
+  logger.info("Received SIGTERM signal");
   await shutdown();
 });
 
 // Initialize browser on startup
-console.log("Initializing browser proxy service...");
+logger.info("Browser proxy service starting", { appEnv: config.APP_ENV });
 await setupBrowser();
 
 // Start the HTTP server using Deno's built-in server API
-const port = 8888;
-console.log(`Browser proxy service running on http://localhost:${port}`);
+const port = config.PORT;
+logger.info("Browser proxy service running", { port, url: `http://localhost:${port}` });
 
 Deno.serve({ port }, async (req: Request) => {
   const url = new URL(req.url);

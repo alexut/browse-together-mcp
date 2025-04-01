@@ -56,6 +56,23 @@ deno run --lock=deno.lock main.ts
 
 ## Implementation Details
 
+### Meta Logger Configuration
+
+The LogTape library includes a "meta logger" that reports on the logging system itself. By default, it outputs INFO-level messages that can clutter logs. To address this:
+
+- Configure the meta logger with a minimum level of `warning` to suppress informational messages
+- Keep the same sink as the application logger for consistency
+- This preserves important error notifications while reducing noise
+
+```typescript
+// Meta logger configuration to suppress INFO messages
+{
+  category: ["logtape", "meta"],
+  sinks: ["console"],
+  lowestLevel: "warning"
+}
+```
+
 ### Core Module (`logging.ts`)
 
 ```typescript
