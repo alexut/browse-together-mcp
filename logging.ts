@@ -6,7 +6,7 @@ import {
   getLogger as getLogtapeLogger,
   type Logger,
 } from "@logtape/logtape";
-import config from "./config.ts";
+import { config } from "./config.ts";
 
 const APP_CATEGORY = "tele-ts";
 

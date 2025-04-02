@@ -3,11 +3,18 @@
   "specifiers": {
     "jsr:@canadaduane/ts-env@~0.3.3": "0.3.3",
     "jsr:@logtape/logtape@0.9": "0.9.0",
+    "jsr:@std/assert@^1.0.12": "1.0.12",
+    "jsr:@std/async@^1.0.12": "1.0.12",
     "jsr:@std/cli@1.0.15": "1.0.15",
+    "jsr:@std/data-structures@^1.0.6": "1.0.6",
+    "jsr:@std/expect@^1.0.14": "1.0.14",
     "jsr:@std/fs@1.0": "1.0.15",
     "jsr:@std/fs@1.0.15": "1.0.15",
+    "jsr:@std/fs@^1.0.15": "1.0.15",
+    "jsr:@std/internal@^1.0.6": "1.0.6",
     "jsr:@std/path@1.0.8": "1.0.8",
     "jsr:@std/path@^1.0.8": "1.0.8",
+    "jsr:@std/testing@^1.0.10": "1.0.10",
     "npm:@folder/xdg@^4.0.1": "4.0.1",
     "npm:playwright@^1.51.1": "1.51.1",
     "npm:zod@^3.22.4": "3.24.2"
@@ -22,8 +29,27 @@
     "@logtape/logtape@0.9.0": {
       "integrity": "aacdeb0e040e5723021bef8b9b8c03ad7cffb5e2146a0024c30814930f6e7c89"
     },
+    "@std/assert@1.0.12": {
+      "integrity": "08009f0926dda9cbd8bef3a35d3b6a4b964b0ab5c3e140a4e0351fbf34af5b9a",
+      "dependencies": [
+        "jsr:@std/internal"
+      ]
+    },
+    "@std/async@1.0.12": {
+      "integrity": "d1bfcec459e8012846fe4e38dfc4241ab23240ecda3d8d6dfcf6d81a632e803d"
+    },
     "@std/cli@1.0.15": {
       "integrity": "e79ba3272ec710ca44d8342a7688e6288b0b88802703f3264184b52893d5e93f"
+    },
+    "@std/data-structures@1.0.6": {
+      "integrity": "76a7fd8080c66604c0496220a791860492ab21a04a63a969c0b9a0609bbbb760"
+    },
+    "@std/expect@1.0.14": {
+      "integrity": "27b8200267c97206e38050aff18badc82e73b3072c1a6bdd59393ddea6f69183",
+      "dependencies": [
+        "jsr:@std/assert",
+        "jsr:@std/internal"
+      ]
     },
     "@std/fs@1.0.15": {
       "integrity": "c083fb479889d6440d768e498195c3fc499d426fbf9a6592f98f53884d1d3f41",
@@ -31,8 +57,22 @@
         "jsr:@std/path@^1.0.8"
       ]
     },
+    "@std/internal@1.0.6": {
+      "integrity": "9533b128f230f73bd209408bb07a4b12f8d4255ab2a4d22a1fd6d87304aca9a4"
+    },
     "@std/path@1.0.8": {
       "integrity": "548fa456bb6a04d3c1a1e7477986b6cffbce95102d0bb447c67c4ee70e0364be"
+    },
+    "@std/testing@1.0.10": {
+      "integrity": "8997bd0b0df020b81bf5eae103c66622918adeff7e45e96291c92a29dbf82cc1",
+      "dependencies": [
+        "jsr:@std/assert",
+        "jsr:@std/async",
+        "jsr:@std/data-structures",
+        "jsr:@std/fs@^1.0.15",
+        "jsr:@std/internal",
+        "jsr:@std/path@^1.0.8"
+      ]
     }
   },
   "npm": {
@@ -94,10 +134,13 @@
     "dependencies": [
       "jsr:@canadaduane/ts-env@~0.3.3",
       "jsr:@logtape/logtape@0.9",
+      "jsr:@std/assert@^1.0.12",
       "jsr:@std/cli@1.0.15",
+      "jsr:@std/expect@^1.0.14",
       "jsr:@std/fs@1.0.15",
       "jsr:@std/http-server@0.224.0",
       "jsr:@std/path@1.0.8",
+      "jsr:@std/testing@^1.0.10",
       "npm:@folder/xdg@^4.0.1",
       "npm:playwright@^1.51.1",
       "npm:zod@^3.22.4"

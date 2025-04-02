@@ -1,5 +1,11 @@
 # Testing Best Practices
 
+## How to Run Tests in This Project
+
+- Run tests with `deno task test`.
+
+**Note**: while `deno test` is also available, it is not recommended as its output is not as readable.
+
 ## Use Deno testing framework
 
 Best Practices:
@@ -60,7 +66,6 @@ assert(spies.warn.calls.length > 0, "Expected a warning to be logged");
 
 ## General Testing Guidelines
 
-- Run tests with `deno task test`.
 - Name test files as follows:
   - Unit tests: `[file].test.ts`
   - Integration tests: `[file].int.test.ts`

@@ -134,6 +134,21 @@ const { env } = loadEnv({
 });
 ```
 
+We can also use the `validateEnv` function which is what the `loadEnv` function
+uses under the hood.
+
+```typescript
+/**
+ * Validate environment variables against a schema
+ *
+ * @param schema - The schema to validate against
+ * @param options - Configuration options
+ * @returns The validated environment variables
+ * @throws Error if validation fails and exitOnError is false
+ */
+export function validateEnv<T, I>( schema: z.ZodType<T, z.ZodTypeDef, I>, options: LoadEnvOptions = {} ): T
+```
+
 ## Best Practices
 
 1. **Document Requirements**: Include a `.env.example` file showing all required
