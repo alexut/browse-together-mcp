@@ -1,5 +1,5 @@
 // browser-proxy.ts
-import { chromium } from "playwright";
+import { chromium, firefox } from "playwright";
 import type { BrowserCommand, BrowserContextType, PageType } from "./types.ts";
 import { browserCommandSchema } from "./types.ts";
 import { getLogger, setupLogging } from "./logging.ts";
@@ -28,14 +28,18 @@ async function setupBrowser() {
   // Create the dir, if it doesn't exist
   await Deno.mkdir(browserOptions.profileDir, { recursive: true });
 
-  logger.info("Starting browser context");
+  logger.info("Starting browser context", { type: config.BROWSER_TYPE });
 
-  browserContext = await chromium.launchPersistentContext(browserOptions.profileDir, {
-    headless: browserOptions.headless,
-    viewport: null, // Maintain this setting as it's not in config
-    ignoreDefaultArgs: browserOptions.ignoreDefaultArgs,
-    args: browserOptions.args,
-  });
+  const browserType = config.BROWSER_TYPE === 'firefox' ? firefox : chromium;
+  browserContext = await browserType.launchPersistentContext(
+    browserOptions.profileDir,
+    {
+      headless: browserOptions.headless,
+      viewport: null, // Maintain this setting as it's not in config
+      ignoreDefaultArgs: browserOptions.ignoreDefaultArgs,
+      args: browserOptions.args,
+    }
+  );
 
   // Create default page
   const defaultPage = await browserContext.newPage();
@@ -238,7 +242,7 @@ Deno.serve({ port }, async (req: Request) => {
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        },
+        }
       );
     }
 
@@ -261,7 +265,7 @@ Deno.serve({ port }, async (req: Request) => {
           {
             status: 400,
             headers: { "Content-Type": "application/json" },
-          },
+          }
         );
       }
 
@@ -282,7 +286,7 @@ Deno.serve({ port }, async (req: Request) => {
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        },
+        }
       );
     }
   }
@@ -297,7 +301,7 @@ Deno.serve({ port }, async (req: Request) => {
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      },
+      }
     );
   }
 
@@ -314,6 +318,6 @@ Deno.serve({ port }, async (req: Request) => {
     {
       status: 404,
       headers: { "Content-Type": "application/json" },
-    },
+    }
   );
 });

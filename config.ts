@@ -26,6 +26,10 @@ function jsonTransformer<T>(defaultValue: T) {
 // Define the environment schema as the single source of truth
 const envSchema = z.object({
   APP_ENV: presets.appEnv(),
+  BROWSER_TYPE: envVar(z.enum(['chromium', 'firefox']), {
+    default: 'chromium',
+    description: 'Browser type to use (chromium or firefox)',
+  }),
   LOG_LEVEL: envVar(z.enum(["debug", "info", "warn", "error"]), {
     default: "debug",
     description: "Logging verbosity level",
@@ -64,6 +68,7 @@ export type EnvConfig = z.infer<typeof envSchema>;
 // Define the mapping as an array of triples: [envKey, cliKey, shortAlias]
 export const configMapping: [keyof EnvConfig, string, string | undefined][] = [
   ["APP_ENV", "app-env", "e"],
+  ["BROWSER_TYPE", "browser-type", "t"],
   ["LOG_LEVEL", "log-level", "l"],
   ["PORT", "port", "p"],
   ["HEADLESS", "headless", "h"],

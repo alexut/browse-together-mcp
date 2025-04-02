@@ -11,6 +11,7 @@ Both services are built with Deno and TypeScript and work together seamlessly.
 
 ## Features
 
+*   **Multiple Browser Support:** Run with either Chromium (default) or Firefox.
 *   **Persistent Browser Session:** A single browser instance runs for the lifetime of the service.
 *   **Named Tabs:** Control multiple pages (tabs) within the single browser session using unique IDs.
 *   **HTTP API:** Interact with the browser using simple JSON commands over HTTP.
@@ -18,6 +19,8 @@ Both services are built with Deno and TypeScript and work together seamlessly.
 *   **Type Safety:** Uses Zod for robust validation of incoming commands.
 *   **Page Resilience:** Handles cases where browser tabs might be closed externally.
 *   **Persistent Profile:** Uses a persistent browser profile stored in the user's config directory.
+
+Note: Currently supports Mac OS, but can be extended to other platforms with minor changes.
 
 ## Core Components
 
@@ -36,7 +39,12 @@ Both services are built with Deno and TypeScript and work together seamlessly.
    Install Playwright's browser packages (assumes you have `npx` installed):
 
    ```bash
+   # Install all browsers
    npx playwright install
+
+   # Or install specific browsers
+   npx playwright install chromium
+   npx playwright install firefox
    ```
 
    Install Deno:
@@ -74,6 +82,18 @@ Both services are built with Deno and TypeScript and work together seamlessly.
    deno task mcp
    ```
 
+### Browser Selection
+
+You can choose which browser to use by setting the `BROWSER_TYPE` environment variable or using the `--browser-type` flag:
+
+```bash
+# Use Firefox via environment variable
+BROWSER_TYPE=firefox deno task proxy
+
+# Or via CLI flag
+deno task proxy --browser-type firefox
+```
+
 ### Option 1: Interacting via HTTP API
 
 Send POST requests to `/api/browser/:pageId` with a JSON body describing the action.
@@ -96,9 +116,9 @@ curl -X POST http://localhost:8888/api/browser/myTab \
 
 See the [API Reference in `002-browser.md`](docs/002-browser.md#api-reference) for more details.
 
-### Option 2: Using with Claude Desktop
+### Option 2: Using with an MCP Client
 
-1. Configure the MCP server in Claude Desktop by editing your `claude_desktop_config.json`:
+1. Configure the MCP server in your MCP client (e.g. Cline, Windsurf, Claude Desktop) by editing your `claude_desktop_config.json`:
 
 ```json
 {
@@ -121,7 +141,7 @@ See the [API Reference in `002-browser.md`](docs/002-browser.md#api-reference) f
 }
 ```
 
-2. Use the MCP tools in Cline or Windsurf with commands like:
+2. Use the MCP tools in your client with commands like:
 
 ```
 Let's browse to jsr.io together.
