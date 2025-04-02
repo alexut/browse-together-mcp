@@ -1,10 +1,6 @@
-// mcp.ts - MCP (Model Context Protocol) server implementation
+// mcp.ts - FastMCP implementation of the Browse Together MCP server
+import { FastMCP } from "fastmcp";
 import { z } from "zod";
-import {
-  McpServer,
-  StdioServerTransport,
-  type ToolExecutionContext,
-} from "@modelcontextprotocol/sdk";
 import { getLogger, setupLogging } from "./logging.ts";
 import { getConfig } from "./config.ts";
 
@@ -16,20 +12,15 @@ const logger = getLogger("mcp");
 const config = getConfig();
 logger.info("MCP server starting", { appEnv: config.APP_ENV });
 
-// Set up MCP server
-const server = new McpServer({
-  info: {
-    name: "browse-together-mcp",
-    version: "0.1.0",
-  },
-  capabilities: {
-    tools: true,
-  },
-});
-
 // Define base URL for browser service
 const browserServiceBaseUrl = `http://localhost:${config.PORT}`;
 logger.info("Browser service URL", { browserServiceBaseUrl });
+
+// Create FastMCP server instance
+const server = new FastMCP({
+  name: "browse-together-mcp",
+  version: "0.1.0",
+});
 
 // Define interfaces for browser API requests and responses
 interface BrowserApiResponse {
@@ -38,7 +29,7 @@ interface BrowserApiResponse {
   error?: string;
 }
 
-// Tool implementation helper function
+// Browser API helper function (reuse from current implementation)
 async function callBrowserApi(
   pageId: string,
   payload: unknown,
@@ -74,226 +65,188 @@ async function callBrowserApi(
   }
 }
 
-// Input schemas for tools
-const gotoInputSchema = z.object({
-  pageId: z.string().min(1).describe("Identifier for the browser page/tab"),
-  url: z.string().url().describe("The URL to navigate to"),
-  params: z.record(z.unknown()).optional().describe(
-    "Optional Playwright goto parameters (e.g., waitUntil)",
-  ),
-});
+// Define tool input types based on Zod schemas
+type GotoInput = {
+  pageId: string;
+  url: string;
+  params?: Record<string, unknown>;
+};
 
-const clickInputSchema = z.object({
-  pageId: z.string().min(1).describe("Identifier for the browser page/tab"),
-  selector: z.string().min(1).describe(
-    "CSS or XPath selector for the element to click",
-  ),
-  params: z.record(z.unknown()).optional().describe(
-    "Optional Playwright click parameters",
-  ),
-});
+type ClickInput = {
+  pageId: string;
+  selector: string;
+  params?: Record<string, unknown>;
+};
 
-const fillInputSchema = z.object({
-  pageId: z.string().min(1).describe("Identifier for the browser page/tab"),
-  selector: z.string().min(1).describe(
-    "CSS or XPath selector for the input element",
-  ),
-  text: z.string().describe("The text to fill into the element"),
-  params: z.record(z.unknown()).optional().describe(
-    "Optional Playwright fill parameters",
-  ),
-});
+type FillInput = {
+  pageId: string;
+  selector: string;
+  text: string;
+  params?: Record<string, unknown>;
+};
 
-const contentInputSchema = z.object({
-  pageId: z.string().min(1).describe("Identifier for the browser page/tab"),
-});
+type ContentInput = {
+  pageId: string;
+};
 
-const fetchInputSchema = z.object({
-  pageId: z.string().min(1).describe("Identifier for the browser page/tab"),
-  url: z.string().url().describe("The URL to fetch within the page context"),
-  fetchOptions: z.record(z.unknown()).optional().describe(
-    "Optional fetch options (method, headers, body, etc.)",
-  ),
-  responseType: z.enum(["text", "json"]).default("text").describe(
-    "Expected response type ('text' or 'json')",
-  ),
-});
+type FetchInput = {
+  pageId: string;
+  url: string;
+  fetchOptions?: Record<string, unknown>;
+  responseType: "text" | "json";
+};
 
-const listPagesInputSchema = z.object({});
+type ClosePageInput = {
+  pageId: string;
+};
 
-const closePageInputSchema = z.object({
-  pageId: z.string().min(1).describe(
-    "Identifier for the browser page/tab to close",
-  ),
-});
-
-// Type definitions for tool input schemas
-type GotoInput = z.infer<typeof gotoInputSchema>;
-type ClickInput = z.infer<typeof clickInputSchema>;
-type FillInput = z.infer<typeof fillInputSchema>;
-type ContentInput = z.infer<typeof contentInputSchema>;
-type FetchInput = z.infer<typeof fetchInputSchema>;
-type ListPagesInput = z.infer<typeof listPagesInputSchema>;
-type ClosePageInput = z.infer<typeof closePageInputSchema>;
-
-// Define MCP tools
-
-// goto tool
-server.defineTool({
+// Define tools
+server.addTool({
   name: "goto",
   description:
     "Navigates a specific browser page (identified by pageId) to a given URL.",
-  inputSchema: gotoInputSchema,
-  async execute(input: GotoInput, _context: ToolExecutionContext) {
+  parameters: z.object({
+    pageId: z.string().min(1).describe("Identifier for the browser page/tab"),
+    url: z.string().url().describe("The URL to navigate to"),
+    params: z.record(z.unknown()).optional().describe(
+      "Optional Playwright goto parameters (e.g., waitUntil)",
+    ),
+  }),
+  execute: async (args: GotoInput) => {
     try {
       const payload = {
         action: "goto",
-        url: input.url,
-        params: input.params,
+        url: args.url,
+        params: args.params,
       };
 
-      await callBrowserApi(input.pageId, payload);
-
-      return {
-        isError: false,
-        content: {
-          text: `Successfully navigated to ${input.url}`,
-        },
-      };
+      await callBrowserApi(args.pageId, payload);
+      return `Successfully navigated to ${args.url}`;
     } catch (error) {
-      return {
-        isError: true,
-        content: {
-          text: `Failed to navigate: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        },
-      };
+      throw new Error(
+        `Failed to navigate: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   },
 });
 
-// click tool
-server.defineTool({
+server.addTool({
   name: "click",
   description:
     "Clicks an element matching the selector on a specific browser page.",
-  inputSchema: clickInputSchema,
-  async execute(input: ClickInput, _context: ToolExecutionContext) {
+  parameters: z.object({
+    pageId: z.string().min(1).describe("Identifier for the browser page/tab"),
+    selector: z.string().min(1).describe(
+      "CSS or XPath selector for the element to click",
+    ),
+    params: z.record(z.unknown()).optional().describe(
+      "Optional Playwright click parameters",
+    ),
+  }),
+  execute: async (args: ClickInput) => {
     try {
       const payload = {
         action: "click",
-        selector: input.selector,
-        params: input.params,
+        selector: args.selector,
+        params: args.params,
       };
 
-      await callBrowserApi(input.pageId, payload);
-
-      return {
-        isError: false,
-        content: {
-          text:
-            `Successfully clicked element matching selector: ${input.selector}`,
-        },
-      };
+      await callBrowserApi(args.pageId, payload);
+      return `Successfully clicked element matching selector: ${args.selector}`;
     } catch (error) {
-      return {
-        isError: true,
-        content: {
-          text: `Failed to click element: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        },
-      };
+      throw new Error(
+        `Failed to click element: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   },
 });
 
-// fill tool
-server.defineTool({
+server.addTool({
   name: "fill",
   description:
     "Fills an input element matching the selector with the provided text on a specific browser page.",
-  inputSchema: fillInputSchema,
-  async execute(input: FillInput, _context: ToolExecutionContext) {
+  parameters: z.object({
+    pageId: z.string().min(1).describe("Identifier for the browser page/tab"),
+    selector: z.string().min(1).describe(
+      "CSS or XPath selector for the input element",
+    ),
+    text: z.string().describe("The text to fill into the element"),
+    params: z.record(z.unknown()).optional().describe(
+      "Optional Playwright fill parameters",
+    ),
+  }),
+  execute: async (args: FillInput) => {
     try {
       const payload = {
         action: "fill",
-        selector: input.selector,
-        text: input.text,
-        params: input.params,
+        selector: args.selector,
+        text: args.text,
+        params: args.params,
       };
 
-      await callBrowserApi(input.pageId, payload);
-
-      return {
-        isError: false,
-        content: {
-          text:
-            `Successfully filled text into element matching selector: ${input.selector}`,
-        },
-      };
+      await callBrowserApi(args.pageId, payload);
+      return `Successfully filled text into element matching selector: ${args.selector}`;
     } catch (error) {
-      return {
-        isError: true,
-        content: {
-          text: `Failed to fill text: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        },
-      };
+      throw new Error(
+        `Failed to fill text: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   },
 });
 
-// content tool
-server.defineTool({
+server.addTool({
   name: "content",
   description: "Retrieves the full HTML content of a specific browser page.",
-  inputSchema: contentInputSchema,
-  async execute(input: ContentInput, _context: ToolExecutionContext) {
+  parameters: z.object({
+    pageId: z.string().min(1).describe("Identifier for the browser page/tab"),
+  }),
+  execute: async (args: ContentInput) => {
     try {
       const payload = { action: "content" };
-
-      const result = await callBrowserApi(input.pageId, payload);
-
-      return {
-        isError: false,
-        content: {
-          text: result.result as string,
-        },
-      };
+      const result = await callBrowserApi(args.pageId, payload);
+      return result.result as string;
     } catch (error) {
-      return {
-        isError: true,
-        content: {
-          text: `Failed to retrieve content: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        },
-      };
+      throw new Error(
+        `Failed to retrieve content: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   },
 });
 
-// fetch tool (using evaluate)
-server.defineTool({
+server.addTool({
   name: "fetch",
   description:
     "Executes a fetch request from within the context of a specific browser page, useful for accessing resources requiring session cookies.",
-  inputSchema: fetchInputSchema,
-  async execute(input: FetchInput, _context: ToolExecutionContext) {
+  parameters: z.object({
+    pageId: z.string().min(1).describe("Identifier for the browser page/tab"),
+    url: z.string().url().describe("The URL to fetch within the page context"),
+    fetchOptions: z.record(z.unknown()).optional().describe(
+      "Optional fetch options (method, headers, body, etc.)",
+    ),
+    responseType: z.enum(["text", "json"]).default("text").describe(
+      "Expected response type ('text' or 'json')",
+    ),
+  }),
+  execute: async (args: FetchInput) => {
     try {
       // Construct a JavaScript expression to execute in the browser context
       const fetchExpression = `
-        fetch(${JSON.stringify(input.url)}, ${
-        JSON.stringify(input.fetchOptions || {})
+        fetch(${JSON.stringify(args.url)}, ${
+        JSON.stringify(args.fetchOptions || {})
       })
           .then(response => {
             if (!response.ok) {
               throw new Error('HTTP error ' + response.status);
             }
-            return response.${input.responseType}();
+            return response.${args.responseType}();
           })
       `;
 
@@ -304,38 +257,30 @@ server.defineTool({
         },
       };
 
-      const result = await callBrowserApi(input.pageId, payload);
+      const result = await callBrowserApi(args.pageId, payload);
 
       // For JSON, we might want to stringify the result for better readability
-      const responseContent = input.responseType === "json"
+      return args.responseType === "json"
         ? JSON.stringify(result.result, null, 2)
         : String(result.result);
-
-      return {
-        isError: false,
-        content: {
-          text: responseContent,
-        },
-      };
     } catch (error) {
-      return {
-        isError: true,
-        content: {
-          text: `Failed to fetch resource: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        },
-      };
+      throw new Error(
+        `Failed to fetch resource: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   },
 });
 
-// listPages tool
-server.defineTool({
+// Type for listPages input (empty object)
+type ListPagesInput = Record<string, never>;
+
+server.addTool({
   name: "listPages",
   description: "Lists all active browser pages/tabs.",
-  inputSchema: listPagesInputSchema,
-  async execute(_input: ListPagesInput, _context: ToolExecutionContext) {
+  parameters: z.object({}),
+  execute: async (_args: ListPagesInput) => {
     try {
       const url = `${browserServiceBaseUrl}/api/browser/pages`;
 
@@ -353,57 +298,44 @@ server.defineTool({
         throw new Error(data.error || "Unknown error occurred");
       }
 
-      return {
-        isError: false,
-        content: {
-          text: `Active pages: ${JSON.stringify(data.pages)}`,
-        },
-      };
+      return `Active pages: ${JSON.stringify(data.pages)}`;
     } catch (error) {
-      return {
-        isError: true,
-        content: {
-          text: `Failed to list pages: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        },
-      };
+      throw new Error(
+        `Failed to list pages: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   },
 });
 
-// closePage tool
-server.defineTool({
+server.addTool({
   name: "closePage",
   description: "Closes a specific browser page/tab.",
-  inputSchema: closePageInputSchema,
-  async execute(input: ClosePageInput, _context: ToolExecutionContext) {
+  parameters: z.object({
+    pageId: z.string().min(1).describe(
+      "Identifier for the browser page/tab to close",
+    ),
+  }),
+  execute: async (args: ClosePageInput) => {
     try {
       const payload = { action: "closePage" };
-
-      await callBrowserApi(input.pageId, payload);
-
-      return {
-        isError: false,
-        content: {
-          text: `Successfully closed page: ${input.pageId}`,
-        },
-      };
+      await callBrowserApi(args.pageId, payload);
+      return `Successfully closed page: ${args.pageId}`;
     } catch (error) {
-      return {
-        isError: true,
-        content: {
-          text: `Failed to close page: ${
-            error instanceof Error ? error.message : String(error)
-          }`,
-        },
-      };
+      throw new Error(
+        `Failed to close page: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
     }
   },
 });
 
-// Connect the server using StdioServerTransport
-logger.info("Connecting MCP server with StdioServerTransport");
-server.connect(new StdioServerTransport());
+// Start the server with STDIO transport
+logger.info("Starting Browse Together MCP server with STDIO transport");
+server.start({
+  transportType: "stdio",
+});
 
-logger.info("MCP server is ready");
+logger.info("Browse Together MCP server is ready");
