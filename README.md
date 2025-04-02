@@ -1,6 +1,6 @@
-# Tele-TS: Playwright Browser Proxy Service
+# Browse Together MCP: Playwright Browser Proxy with MCP Server
 
-This project provides an HTTP service that acts as a proxy to a persistent Playwright browser instance, allowing remote control of browser automation tasks. It uses Deno and TypeScript.
+This project provides an HTTP service that acts as a proxy to a persistent Playwright browser instance, allowing remote control of co-browsing and automation tasks with a separate MCP server. It uses Deno and TypeScript.
 
 ## Features
 
