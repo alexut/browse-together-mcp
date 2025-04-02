@@ -6,19 +6,25 @@ import {
   getLogger as getLogtapeLogger,
   type Logger,
 } from "@logtape/logtape";
-import { config } from "./config.ts";
+import { getConfig } from "./config.ts";
 
+const config = getConfig();
 const APP_CATEGORY = "tele-ts";
 
 /**
  * Maps application log levels to LogTape log levels
  */
-function mapLogLevel(level: string): "debug" | "info" | "error" | "warning" | "fatal" | undefined {
-  const mapping: Record<string, "debug" | "info" | "error" | "warning" | "fatal"> = {
+function mapLogLevel(
+  level: string,
+): "debug" | "info" | "error" | "warning" | "fatal" | undefined {
+  const mapping: Record<
+    string,
+    "debug" | "info" | "error" | "warning" | "fatal"
+  > = {
     "debug": "debug",
     "info": "info",
     "warn": "warning",
-    "error": "error"
+    "error": "error",
   };
   return mapping[level];
 }
@@ -30,31 +36,31 @@ function mapLogLevel(level: string): "debug" | "info" | "error" | "warning" | "f
 export async function setupLogging(): Promise<void> {
   const isDevelopment = config.APP_ENV === "development";
   const isTest = config.APP_ENV === "test";
-  
+
   try {
     await configure({
       sinks: {
-        console: getConsoleSink({ 
-          formatter: isDevelopment 
-            ? ansiColorFormatter 
-            : (record: unknown) => `${JSON.stringify(record)}\n`
+        console: getConsoleSink({
+          formatter: isDevelopment
+            ? ansiColorFormatter
+            : (record: unknown) => `${JSON.stringify(record)}\n`,
         }),
       },
       loggers: [
         // Configure app loggers
-        { 
-          category: [APP_CATEGORY], 
-          sinks: ["console"], 
+        {
+          category: [APP_CATEGORY],
+          sinks: ["console"],
           // Use error-only logging in test environment
-          lowestLevel: isTest ? "error" : mapLogLevel(config.LOG_LEVEL) 
+          lowestLevel: isTest ? "error" : mapLogLevel(config.LOG_LEVEL),
         },
         // Configure meta logger with higher log level to suppress info messages
         {
           category: ["logtape", "meta"],
           sinks: ["console"],
           // Only show warnings and more severe messages from the meta logger
-          lowestLevel: "warning"
-        }
+          lowestLevel: "warning",
+        },
       ],
     });
   } catch (error) {

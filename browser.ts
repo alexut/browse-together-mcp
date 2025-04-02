@@ -1,11 +1,9 @@
 // browser-proxy.ts
 import { chromium } from "playwright";
-import xdg from "@folder/xdg";
-import { join } from "std/path";
 import type { BrowserCommand, BrowserContextType, PageType } from "./types.ts";
 import { browserCommandSchema } from "./types.ts";
 import { getLogger, setupLogging } from "./logging.ts";
-import { getConfig } from "./config.ts";
+import { getConfig, getBrowserLaunchOptions } from "./config.ts";
 
 // Initialize logging early
 await setupLogging();
@@ -24,19 +22,19 @@ async function setupBrowser() {
     return browserContext;
   }
 
-  const dirs = xdg.darwin();
-  const configDir = join(dirs.config, "playwright", "profile");
+  // Get browser launch options from the configuration
+  const browserOptions = getBrowserLaunchOptions(config);
 
   // Create the dir, if it doesn't exist
-  await Deno.mkdir(configDir, { recursive: true });
+  await Deno.mkdir(browserOptions.profileDir, { recursive: true });
 
   logger.info("Starting browser context");
 
-  browserContext = await chromium.launchPersistentContext(configDir, {
-    headless: false,
-    viewport: null,
-    ignoreDefaultArgs: ["--enable-automation"],
-    args: ["--no-default-browser-check"],
+  browserContext = await chromium.launchPersistentContext(browserOptions.profileDir, {
+    headless: browserOptions.headless,
+    viewport: null, // Maintain this setting as it's not in config
+    ignoreDefaultArgs: browserOptions.ignoreDefaultArgs,
+    args: browserOptions.args,
   });
 
   // Create default page
