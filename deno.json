@@ -3,6 +3,7 @@
 		"@canadaduane/ts-env": "jsr:@canadaduane/ts-env@^0.3.3",
 		"@folder/xdg": "npm:@folder/xdg@^4.0.1",
 		"@logtape/logtape": "jsr:@logtape/logtape@^0.9.0",
+		"@modelcontextprotocol/sdk": "npm:@modelcontextprotocol/sdk@^1.8.0",
 		"@std/cli": "jsr:@std/cli@1.0.15",
 		"@std/fs": "jsr:@std/fs@1.0.15",
 		"@std/path": "jsr:@std/path@1.0.8",
@@ -16,6 +17,7 @@
 	"tasks": {
 		"start": "deno run --allow-read --lock=deno.lock cli.ts",
 		"proxy": "deno run --allow-read --allow-write --allow-net --allow-run --allow-env --allow-sys browser.ts",
+		"mcp": "deno run --allow-read --allow-net --allow-env mcp.ts",
 		"test": "NO_COLOR=1 deno test -A"
 	},
 	"fmt": {
