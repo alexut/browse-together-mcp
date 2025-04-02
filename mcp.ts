@@ -4,7 +4,7 @@ import {
   McpServer,
   StdioServerTransport,
   type ToolExecutionContext,
-} from "npm:@modelcontextprotocol/sdk";
+} from "@modelcontextprotocol/sdk";
 import { getLogger, setupLogging } from "./logging.ts";
 import { getConfig } from "./config.ts";
 
