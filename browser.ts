@@ -4,12 +4,14 @@ import xdg from "@folder/xdg";
 import { join } from "std/path";
 import type { BrowserCommand, BrowserContextType, PageType } from "./types.ts";
 import { browserCommandSchema } from "./types.ts";
-import { setupLogging, getLogger } from "./logging.ts";
-import config from "./config.ts";
+import { getLogger, setupLogging } from "./logging.ts";
+import { getConfig } from "./config.ts";
 
 // Initialize logging early
 await setupLogging();
 const logger = getLogger("browser");
+
+const config = getConfig();
 
 // Single browser context and page management
 let browserContext: BrowserContextType | null = null;
@@ -51,7 +53,7 @@ async function setupBrowser() {
 async function isPageValid(page: PageType): Promise<boolean> {
   try {
     // Perform a minimal evaluation to check if the page is still connected
-    await page.evaluate('1');
+    await page.evaluate("1");
     return true;
   } catch (_error) {
     return false;
@@ -68,7 +70,7 @@ async function getOrCreatePage(pageId: string) {
     if (await isPageValid(pages[pageId])) {
       return pages[pageId];
     }
-    
+
     console.log(`Page ${pageId} was closed externally, cleaning up reference`);
     delete pages[pageId];
     // Continue to create a new page
@@ -77,13 +79,13 @@ async function getOrCreatePage(pageId: string) {
   // Create a new page
   console.log(`Creating new page: ${pageId}`);
   const page = await browserContext.newPage();
-  
+
   // Add event listener for close events
-  page.on('close', () => {
+  page.on("close", () => {
     console.log(`Page ${pageId} closed event detected`);
     delete pages[pageId];
   });
-  
+
   pages[pageId] = page;
   return page;
 }
@@ -216,7 +218,10 @@ await setupBrowser();
 
 // Start the HTTP server using Deno's built-in server API
 const port = config.PORT;
-logger.info("Browser proxy service running", { port, url: `http://localhost:${port}` });
+logger.info("Browser proxy service running", {
+  port,
+  url: `http://localhost:${port}`,
+});
 
 Deno.serve({ port }, async (req: Request) => {
   const url = new URL(req.url);

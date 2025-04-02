@@ -162,5 +162,3 @@ export function getBrowserLaunchOptions(config: EnvConfig) {
     args: config.BROWSER_ARGS,
   };
 }
-
-export const config = getConfig();
