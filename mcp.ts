@@ -1,4 +1,5 @@
 // mcp.ts - FastMCP implementation of the Browse Together MCP server
+
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
 import { getLogger, setupLogging } from "./logging.ts";

@@ -1,4 +1,5 @@
-// browser-proxy.ts
+// browser.ts: Spin up a headful browser and HTTP proxy service for its control
+
 // Import firefox from standard playwright
 import { firefox } from "playwright";
 // Import chromium from playwright-extra which supports puppeteer plugins

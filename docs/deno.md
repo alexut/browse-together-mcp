@@ -41,8 +41,8 @@ If your project uses `deps.ts` for dependency management, consider transitioning
    ```json
    {
      "imports": {
-       "zod": "https://deno.land/x/zod@v3.22.4/mod.ts",
-       "std/assert": "https://deno.land/std@0.224.0/assert/mod.ts"
+       "zod": "npm:zod@3.24.2",
+       "std/assert": "@std/assert@1.0.12"
      }
    }
    ```
@@ -81,8 +81,7 @@ Example `deno.json` with import maps supporting multiple protocols:
 {
   "imports": {
     "lodash": "npm:lodash@^4.17.21",
-    "moment": "jsr:moment@^2.29.1",
-    "uuid": "https://deno.land/std@0.224.0/uuid/mod.ts"
+    "moment": "jsr:moment@^2.29.1"
   }
 }
 ```
@@ -152,8 +151,8 @@ When publishing to JSR or other registries, make sure to include your
 Use the latest version of Deno's standard library for testing:
 
 ```typescript
-import { assertEquals, assertThrows } from "std/assert";
-import { describe, it } from "std/testing/bdd";
+import { assertEquals, assertThrows } from "@std/assert";
+import { describe, it } from "@std/testing/bdd";
 ```
 
 - Use Jest-like `describe`, `it`, and lifecycle hooks (`beforeEach`, `afterEach`, etc.) from `std/testing/bdd`.
@@ -172,7 +171,7 @@ Deno provides both built-in functionality and standard library modules for worki
 The `parseArgs` function converts command line flags like `--foo=bar` into structured objects:
 
 ```typescript
-import { parseArgs } from "jsr:@std/cli/parse-args";
+import { parseArgs } from "@std/cli/parse-args";
 
 const flags = parseArgs(Deno.args, {
   boolean: ["help", "color"],     // Define boolean flags
