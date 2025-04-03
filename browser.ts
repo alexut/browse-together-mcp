@@ -1,5 +1,10 @@
 // browser-proxy.ts
-import { chromium, firefox } from "playwright";
+// Import firefox from standard playwright
+import { firefox } from "playwright";
+// Import chromium from playwright-extra which supports puppeteer plugins
+import { chromium } from "npm:playwright-extra";
+// Import stealth plugin to avoid detection
+import stealth from "npm:puppeteer-extra-plugin-stealth";
 import type { BrowserCommand, BrowserContextType, PageType } from "./types.ts";
 import { browserCommandSchema } from "./types.ts";
 import { getLogger, setupLogging } from "./logging.ts";
@@ -30,7 +35,15 @@ async function setupBrowser() {
 
   logger.info("Starting browser context", { type: config.BROWSER_TYPE });
 
-  const browserType = config.BROWSER_TYPE === 'firefox' ? firefox : chromium;
+  let browserType: typeof firefox | typeof chromium;
+  if (config.BROWSER_TYPE === 'firefox') {
+    browserType = firefox;
+  } else {
+    // Apply stealth plugin only for Chromium
+    // Note: puppeteer-extra-plugin-stealth is compatible with playwright-extra
+    chromium.use(stealth());
+    browserType = chromium;
+  }
   browserContext = await browserType.launchPersistentContext(
     browserOptions.profileDir,
     {
@@ -52,6 +65,98 @@ async function setupBrowser() {
 
 // Get or create a page with the given ID
 // Function to check if a page is still valid and connected
+// Initialize a page with additional stealth improvements
+async function initializePage(page: PageType) {
+  // Set a consistent User-Agent
+  await page.setExtraHTTPHeaders({
+    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  });
+
+  // In Playwright, we use addInitScript instead of evaluateOnNewDocument
+  // But instead of using typed functions that reference browser DOM types,
+  // we'll use string literals to avoid TypeScript errors in Deno
+  
+  // Override navigator.webdriver
+  await page.addInitScript(`
+    try {
+      Object.defineProperty(Object.getPrototypeOf(navigator), 'webdriver', {
+        get: () => undefined,
+        configurable: true
+      });
+    } catch (e) {
+      console.error('Failed to override navigator.webdriver:', e);
+    }
+  `);
+
+  // WebGL and Canvas fingerprinting protection - using string scripts to avoid TS errors
+  await page.addInitScript(`
+    try {
+      // Canvas fingerprinting protection
+      if (typeof HTMLCanvasElement !== 'undefined') {
+        const getContext = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function(contextType, ...args) {
+          const context = getContext.call(this, contextType, ...args);
+          if (contextType === '2d') {
+            const getImageData = context.getImageData;
+            context.getImageData = function(...args) {
+              const imageData = getImageData.call(this, ...args);
+              // Add minor noise to the image data
+              for (let i = 0; i < imageData.data.length; i += 4) {
+                // Small random adjustments to r,g,b values
+                imageData.data[i] += Math.floor(Math.random() * 2);
+                imageData.data[i+1] += Math.floor(Math.random() * 2);
+                imageData.data[i+2] += Math.floor(Math.random() * 2);
+              }
+              return imageData;
+            };
+          }
+          return context;
+        };
+      }
+
+      // WebGL fingerprinting protection
+      if (typeof WebGLRenderingContext !== 'undefined') {
+        const originalGetParameter = WebGLRenderingContext.prototype.getParameter;
+        WebGLRenderingContext.prototype.getParameter = function(parameter) {
+          // Spoof vendor and renderer info
+          if (parameter === 37445) { // UNMASKED_VENDOR_WEBGL
+            return 'Intel Inc.';
+          }
+          if (parameter === 37446) { // UNMASKED_RENDERER_WEBGL
+            return 'Intel Iris OpenGL Engine';
+          }
+          return originalGetParameter.call(this, parameter);
+        };
+      }
+    } catch (e) {
+      console.error('Failed to apply fingerprinting protections:', e);
+    }
+  `);
+
+  // Permissions and Feature Policy Handling - using string script to avoid TS errors
+  await page.addInitScript(`
+    try {
+      // Only modify permissions API if it exists
+      if (navigator.permissions) {
+        const originalQuery = navigator.permissions.query;
+        navigator.permissions.query = function(parameters) {
+          if (parameters.name === 'notifications') {
+            // Safe check for Notification API
+            if (typeof Notification !== 'undefined') {
+              return Promise.resolve({ state: Notification.permission });
+            }
+          }
+          return originalQuery.call(this, parameters);
+        };
+      }
+    } catch (e) {
+      console.error('Failed to modify permissions API:', e);
+    }
+  `);
+
+  return page;
+}
+
 async function isPageValid(page: PageType): Promise<boolean> {
   try {
     // Perform a minimal evaluation to check if the page is still connected
@@ -81,6 +186,9 @@ async function getOrCreatePage(pageId: string) {
   // Create a new page
   console.log(`Creating new page: ${pageId}`);
   const page = await browserContext.newPage();
+  
+  // Initialize page with stealth improvements
+  await initializePage(page);
 
   // Add event listener for close events
   page.on("close", () => {

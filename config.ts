@@ -54,10 +54,32 @@ const envSchema = z.object({
     },
   ),
   BROWSER_ARGS: envVar(
-    z.string().transform(jsonTransformer(["--no-default-browser-check"])),
+    z.string().transform(jsonTransformer([
+      "--no-default-browser-check",
+      "--disable-blink-features=AutomationControlled",
+      "--disable-features=site-per-process",
+      "--disable-extensions",
+      "--disable-component-extensions-with-background-pages",
+      "--disable-default-apps",
+      "--no-sandbox",
+      "--disable-translate",
+      "--use-fake-device-for-media-stream",
+      "--use-fake-ui-for-media-stream"
+    ])),
     {
-      default: ["--no-default-browser-check"],
-      description: "Custom browser arguments as JSON array",
+      default: [
+        "--no-default-browser-check",
+        "--disable-blink-features=AutomationControlled",
+        "--disable-features=site-per-process",
+        "--disable-extensions",
+        "--disable-component-extensions-with-background-pages",
+        "--disable-default-apps",
+        "--no-sandbox",
+        "--disable-translate",
+        "--use-fake-device-for-media-stream",
+        "--use-fake-ui-for-media-stream"
+      ],
+      description: "Custom browser arguments as JSON array for enhanced stealth",
     },
   ),
 });
