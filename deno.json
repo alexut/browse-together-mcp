@@ -17,8 +17,9 @@
 		"zod": "npm:zod@^3.22.4"
 	},
 	"tasks": {
-		"browser": "deno run --allow-read --allow-write --allow-net --allow-run --allow-env --allow-sys browser.ts",
-		"mcp": "deno run --allow-read --allow-net --allow-env --allow-sys mcp.ts",
+		"browser": "deno run --allow-read --allow-write --allow-net --allow-run --allow-env --allow-sys --env-file=.env browser.ts",
+		"mcp": "deno run --allow-read --allow-net --allow-env --allow-sys --env-file=.env mcp.ts",
+		"token": "deno run scripts/generate-tokens.ts --length 48",
 		"test": "NO_COLOR=1 deno test -A"
 	},
 	"fmt": {

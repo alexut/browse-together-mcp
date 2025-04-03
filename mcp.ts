@@ -13,6 +13,12 @@ const logger = getLogger("mcp");
 const config = getConfig();
 logger.info("MCP server starting", { appEnv: config.APP_ENV });
 
+// Validate Browser API token is configured
+if (!config.BROWSER_API_TOKEN) {
+  logger.error("BROWSER_API_TOKEN is required but not configured");
+  Deno.exit(1);
+}
+
 // Define base URL for browser service
 const browserServiceBaseUrl = `http://localhost:${config.PORT}`;
 logger.info("Browser service URL", { browserServiceBaseUrl });
@@ -42,6 +48,7 @@ async function callBrowserApi(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${config.BROWSER_API_TOKEN}`, // Add token to request
       },
       body: JSON.stringify(payload),
     });
@@ -283,9 +290,19 @@ server.addTool({
   parameters: z.object({}),
   execute: async (_args: ListPagesInput) => {
     try {
-      const url = `${browserServiceBaseUrl}/api/browser/pages`;
+      if (!config.BROWSER_API_TOKEN) {
+        throw new Error("BROWSER_API_TOKEN is not configured");
+      }
 
-      const response = await fetch(url);
+      const response = await fetch(
+        `${browserServiceBaseUrl}/api/browser/pages`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${config.BROWSER_API_TOKEN}`,
+          },
+        },
+      );
       if (!response.ok) {
         throw new Error(`HTTP error ${response.status}`);
       }

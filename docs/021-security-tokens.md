@@ -29,37 +29,18 @@ Add new token-related configuration option to `config.ts`:
 // Add to envSchema in config.ts
 const envSchema = z.object({
   // Existing config options...
-  APP_ENV: presets.appEnv(),
-  BROWSER_TYPE: envVar(z.enum(['chromium', 'firefox']), {
-    default: 'chromium',
-    description: 'Browser type to use (chromium or firefox)',
-  }),
-  LOG_LEVEL: envVar(z.enum(["debug", "info", "warn", "error"]), {
-    default: "debug",
-    description: "Logging verbosity level",
-  }),
-  PORT: envVar(z.coerce.number().int().positive().max(65535), {
-    default: 8888,
-    description: "HTTP port for the proxy service",
-  }),
   
   // New token-related option
   BROWSER_API_TOKEN: envVar(z.string().min(32), {
     // No default - must be explicitly provided
     description: "Secret token for authenticating with the Browser Proxy Service API",
   }),
-  // Other existing config options...
 });
 
 // Add to configMapping for CLI args
 export const configMapping: [keyof EnvConfig, string, string | undefined][] = [
   // Existing mappings...
-  ["APP_ENV", "app-env", "e"],
-  ["BROWSER_TYPE", "browser-type", "t"],
-  ["LOG_LEVEL", "log-level", "l"],
-  ["PORT", "port", "p"],
   ["BROWSER_API_TOKEN", "browser-api-token", undefined], // No short alias for security
-  // Other existing mappings...
 ];
 ```
 
@@ -195,8 +176,7 @@ Create a new file `scripts/generate-tokens.ts`:
 
 ```typescript
 // scripts/generate-tokens.ts
-import { crypto } from "https://deno.land/std/crypto/mod.ts";
-import { encode as encodeBase64 } from "https://deno.land/std/encoding/base64.ts";
+import { parseArgs } from "@std/cli/parse-args";
 
 function generateSecureToken(length = 48): string {
   const buffer = new Uint8Array(length);
@@ -224,6 +204,15 @@ BROWSER_API_TOKEN=${token}
 #### 5.1 Update README with Token Instructions
 
 Update the project README to include token usage instructions:
+
+#### 5.2 Update .env.example with Token Instructions
+
+Add token instructions to the .env.example file:
+
+```markdown
+# Security settings
+BROWSER_API_TOKEN=      # Required API token for authentication (generate with scripts/generate-tokens.ts)
+```
 
 ```markdown
 ## Security Tokens

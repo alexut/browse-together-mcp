@@ -38,6 +38,10 @@ const envSchema = z.object({
     default: 8888,
     description: "HTTP port for the proxy service",
   }),
+  BROWSER_API_TOKEN: envVar(z.string().min(32), {
+    // No default - must be explicitly provided
+    description: "Secret token for authenticating with the Browser Proxy Service API",
+  }),
   HEADLESS: presets.booleanFlag({
     default: false,
     description: "Whether to run browser in headless mode",
@@ -93,6 +97,7 @@ export const configMapping: [keyof EnvConfig, string, string | undefined][] = [
   ["BROWSER_TYPE", "browser-type", "t"],
   ["LOG_LEVEL", "log-level", "l"],
   ["PORT", "port", "p"],
+  ["BROWSER_API_TOKEN", "browser-api-token", undefined], // No short alias for security
   ["HEADLESS", "headless", "h"],
   ["PROFILE_DIR", "profile-dir", "d"],
   ["IGNORE_DEFAULT_ARGS", "ignore-default-args", "i"],

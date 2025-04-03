@@ -15,7 +15,14 @@ import { getBrowserLaunchOptions, getConfig } from "./config.ts";
 await setupLogging();
 const logger = getLogger("browser");
 
+// Load configuration
 const config = getConfig();
+
+// Validate API token is configured
+if (!config.BROWSER_API_TOKEN) {
+  logger.error("BROWSER_API_TOKEN is required but not configured");
+  Deno.exit(1);
+}
 
 // Single browser context and page management
 let browserContext: BrowserContextType | null = null;
@@ -339,6 +346,29 @@ Deno.serve({ port }, async (req: Request) => {
   const url = new URL(req.url);
   const path = url.pathname;
   const method = req.method;
+
+  // Check for API token in all API requests
+  if (path.startsWith('/api/')) {
+    // Extract token from Authorization header
+    const authHeader = req.headers.get('Authorization');
+    const token = authHeader?.startsWith('Bearer ') 
+      ? authHeader.slice(7) 
+      : null;
+    
+    // Validate token
+    if (!token || token !== config.BROWSER_API_TOKEN) {
+      return new Response(
+        JSON.stringify({
+          success: false, 
+          error: "Unauthorized: Invalid or missing API token"
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+  }
 
   // API endpoint to execute commands on a specific page
   if (path.match(/\/api\/browser\/([^\/]+)/) && method === "POST") {
