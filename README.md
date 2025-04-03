@@ -59,7 +59,7 @@ Note: Currently supports Mac OS, but can be extended to other platforms with min
 
 1. **Start the Browser Service**:
    ```bash
-   deno task proxy
+   deno task browser
    ```
    This starts the browser proxy on `http://localhost:8888` (or the port specified in your environment)
 
@@ -88,10 +88,10 @@ You can choose which browser to use by setting the `BROWSER_TYPE` environment va
 
 ```bash
 # Use Firefox via environment variable
-BROWSER_TYPE=firefox deno task proxy
+BROWSER_TYPE=firefox deno task browser
 
 # Or via CLI flag
-deno task proxy --browser-type firefox
+deno task browser --browser-type firefox
 ```
 
 ### Option 1: Interacting via HTTP API
@@ -182,7 +182,7 @@ See also [vibe-coders.org](https://vibe-coders.org/) for more information about 
 
 ## Development
 
-*   **Run Browser Proxy:** `deno task proxy`
+*   **Run Browser Proxy:** `deno task browser`
 *   **Run MCP Server:** `deno task mcp` 
 *   **Format Code:** `deno fmt`
 *   **Check Dependencies:** `deno check --all browser.ts mcp.ts types.ts`
