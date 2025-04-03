@@ -1,6 +1,8 @@
-# Browse Together MCP: Playwright Browser Proxy with MCP Server
+# Browse Together MCP
 
-Do you and your AI assistant need access to the same browser session? Want to pull down docs, but you need to be logged in to do so? This is where Browse Together MCP comes in.
+## Playwright Browser Proxy with MCP Server
+
+Spins up a browser and MCP server that can be used to control the browser by human, or via HTTP API, or MCP client.
 
 This project provides two complementary services for browser automation and co-browsing:
 
