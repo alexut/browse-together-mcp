@@ -20,11 +20,9 @@
     "npm:@modelcontextprotocol/sdk@^1.8.0": "1.8.0_express@5.1.0_zod@3.24.2",
     "npm:@types/node@*": "22.12.0",
     "npm:fastmcp@1": "1.21.0_zod-to-json-schema@3.24.5__zod@3.24.2_zod@3.24.2",
-    "npm:playwright-extra@*": "4.3.6_playwright@1.51.1",
     "npm:playwright-extra@^4.3.6": "4.3.6_playwright@1.51.1",
     "npm:playwright@^1.51.1": "1.51.1",
-    "npm:puppeteer-extra-plugin-stealth@*": "2.11.2_playwright-extra@4.3.6__playwright@1.51.1_playwright@1.51.1",
-    "npm:puppeteer-extra-plugin-stealth@^2.11.2": "2.11.2_playwright-extra@4.3.6__playwright@1.51.1_playwright@1.51.1",
+    "npm:puppeteer-extra-plugin-stealth@^2.11.2": "2.11.2",
     "npm:zod@^3.22.4": "3.24.2"
   },
   "jsr": {
@@ -758,42 +756,38 @@
         "ipaddr.js"
       ]
     },
-    "puppeteer-extra-plugin-stealth@2.11.2_playwright-extra@4.3.6__playwright@1.51.1_playwright@1.51.1": {
+    "puppeteer-extra-plugin-stealth@2.11.2": {
       "integrity": "sha512-bUemM5XmTj9i2ZerBzsk2AN5is0wHMNE6K0hXBzBXOzP5m5G3Wl0RHhiqKeHToe/uIH8AoZiGhc1tCkLZQPKTQ==",
       "dependencies": [
         "debug",
-        "playwright-extra",
         "puppeteer-extra-plugin",
         "puppeteer-extra-plugin-user-preferences"
       ]
     },
-    "puppeteer-extra-plugin-user-data-dir@2.4.1_playwright-extra@4.3.6__playwright@1.51.1_playwright@1.51.1": {
+    "puppeteer-extra-plugin-user-data-dir@2.4.1": {
       "integrity": "sha512-kH1GnCcqEDoBXO7epAse4TBPJh9tEpVEK/vkedKfjOVOhZAvLkHGc9swMs5ChrJbRnf8Hdpug6TJlEuimXNQ+g==",
       "dependencies": [
         "debug",
         "fs-extra",
-        "playwright-extra",
         "puppeteer-extra-plugin",
         "rimraf"
       ]
     },
-    "puppeteer-extra-plugin-user-preferences@2.4.1_playwright-extra@4.3.6__playwright@1.51.1_playwright@1.51.1": {
+    "puppeteer-extra-plugin-user-preferences@2.4.1": {
       "integrity": "sha512-i1oAZxRbc1bk8MZufKCruCEC3CCafO9RKMkkodZltI4OqibLFXF3tj6HZ4LZ9C5vCXZjYcDWazgtY69mnmrQ9A==",
       "dependencies": [
         "debug",
         "deepmerge",
-        "playwright-extra",
         "puppeteer-extra-plugin",
         "puppeteer-extra-plugin-user-data-dir"
       ]
     },
-    "puppeteer-extra-plugin@3.2.3_playwright-extra@4.3.6__playwright@1.51.1_playwright@1.51.1": {
+    "puppeteer-extra-plugin@3.2.3": {
       "integrity": "sha512-6RNy0e6pH8vaS3akPIKGg28xcryKscczt4wIl0ePciZENGE2yoaQJNd17UiEbdmh5/6WW6dPcfRWT9lxBwCi2Q==",
       "dependencies": [
         "@types/debug",
         "debug",
-        "merge-deep",
-        "playwright-extra"
+        "merge-deep"
       ]
     },
     "qs@6.14.0": {
@@ -1077,7 +1071,6 @@
       "jsr:@std/path@1.0.8",
       "jsr:@std/testing@^1.0.10",
       "npm:@folder/xdg@^4.0.1",
-      "npm:@modelcontextprotocol/sdk@^1.8.0",
       "npm:fastmcp@1",
       "npm:playwright-extra@^4.3.6",
       "npm:playwright@^1.51.1",

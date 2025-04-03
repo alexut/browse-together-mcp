@@ -2,13 +2,13 @@
 // Import firefox from standard playwright
 import { firefox } from "playwright";
 // Import chromium from playwright-extra which supports puppeteer plugins
-import { chromium } from "npm:playwright-extra";
+import { chromium } from "playwright-extra";
 // Import stealth plugin to avoid detection
-import stealth from "npm:puppeteer-extra-plugin-stealth";
+import stealth from "puppeteer-extra-plugin-stealth";
 import type { BrowserCommand, BrowserContextType, PageType } from "./types.ts";
 import { browserCommandSchema } from "./types.ts";
 import { getLogger, setupLogging } from "./logging.ts";
-import { getConfig, getBrowserLaunchOptions } from "./config.ts";
+import { getBrowserLaunchOptions, getConfig } from "./config.ts";
 
 // Initialize logging early
 await setupLogging();
@@ -36,7 +36,7 @@ async function setupBrowser() {
   logger.info("Starting browser context", { type: config.BROWSER_TYPE });
 
   let browserType: typeof firefox | typeof chromium;
-  if (config.BROWSER_TYPE === 'firefox') {
+  if (config.BROWSER_TYPE === "firefox") {
     browserType = firefox;
   } else {
     // Apply stealth plugin only for Chromium
@@ -51,7 +51,7 @@ async function setupBrowser() {
       viewport: null, // Maintain this setting as it's not in config
       ignoreDefaultArgs: browserOptions.ignoreDefaultArgs,
       args: browserOptions.args,
-    }
+    },
   );
 
   // Create default page
@@ -69,13 +69,14 @@ async function setupBrowser() {
 async function initializePage(page: PageType) {
   // Set a consistent User-Agent
   await page.setExtraHTTPHeaders({
-    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    "user-agent":
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
   });
 
   // In Playwright, we use addInitScript instead of evaluateOnNewDocument
   // But instead of using typed functions that reference browser DOM types,
   // we'll use string literals to avoid TypeScript errors in Deno
-  
+
   // Override navigator.webdriver
   await page.addInitScript(`
     try {
@@ -186,7 +187,7 @@ async function getOrCreatePage(pageId: string) {
   // Create a new page
   console.log(`Creating new page: ${pageId}`);
   const page = await browserContext.newPage();
-  
+
   // Initialize page with stealth improvements
   await initializePage(page);
 
@@ -350,7 +351,7 @@ Deno.serve({ port }, async (req: Request) => {
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -373,7 +374,7 @@ Deno.serve({ port }, async (req: Request) => {
           {
             status: 400,
             headers: { "Content-Type": "application/json" },
-          }
+          },
         );
       }
 
@@ -394,7 +395,7 @@ Deno.serve({ port }, async (req: Request) => {
         {
           status: 400,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
   }
@@ -409,7 +410,7 @@ Deno.serve({ port }, async (req: Request) => {
       {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }
+      },
     );
   }
 
@@ -426,6 +427,6 @@ Deno.serve({ port }, async (req: Request) => {
     {
       status: 404,
       headers: { "Content-Type": "application/json" },
-    }
+    },
   );
 });
