@@ -2,27 +2,32 @@
 
 ## Playwright Browser Proxy with MCP Server
 
-Spins up a browser and MCP server that can be used to control the browser by human, or via HTTP API, or MCP client.
+A Playwright browser and MCP Server on your desktop. You can spin up a headful browser (for human interaction) and an accompanying MCP server that can be used to control the browser via HTTP API or MCP server.
 
 This project provides two complementary services for browser automation and co-browsing:
 
-1. A **Browser Proxy Service** that controls a persistent Playwright browser instance via HTTP
-2. An **MCP Server** that exposes browser functionality to MCP clients (like Claude Desktop) via the FastMCP framework
+- A **Browser Proxy Service** that controls a persistent Playwright browser instance via HTTP. Let's you log in to services you use, like you normally would.
+- An **MCP Server** that exposes browser functionality to MCP clients (like Claude Desktop) via the FastMCP framework. Can operate inside the authenticated session you provide, giving your MCP commands more power and usefulness as an authenticated user.
 
 Both services are built with Deno and TypeScript and work together seamlessly.
 
-## Features
+### Features
 
-*   **Multiple Browser Support:** Run with either Chromium (default) or Firefox.
-*   **Persistent Browser Session:** A single browser instance runs for the lifetime of the service.
-*   **Named Tabs:** Control multiple pages (tabs) within the single browser session using unique IDs.
-*   **HTTP API:** Interact with the browser using simple JSON commands over HTTP.
-*   **MCP Integration:** Use the browser through Cline, Windsurf, Claude Desktop, or other MCP clients.
-*   **Type Safety:** Uses Zod for robust validation of incoming commands.
-*   **Page Resilience:** Handles cases where browser tabs might be closed externally.
-*   **Persistent Profile:** Uses a persistent browser profile stored in the user's config directory.
+- Multiple Browser Support: Run with either Chromium (default) or Firefox.
+- Persistent Browser Session: A single browser instance runs for the lifetime of the service.
+- Named Tabs: Control multiple pages (tabs) within the single browser session using unique IDs.
+- HTTP API: Interact with the browser using simple JSON commands over HTTP.
+- MCP Integration: Use the browser through Cline, Windsurf, Claude Desktop, or other MCP clients.
+- Type Safety: Uses Zod for robust validation of incoming commands.
+- Secure your browser proxy service (HTTP) endpoint with an API token.
 
 Note: Currently supports Mac OS, but can be extended to other platforms with minor changes.
+
+### Is this Computer Use / Operator?
+
+No, not at this time. This is a (headful) web browser that behaves like a normal human-controlled browser, but also allows you to control your session via HTTP API or MCP client. While you CAN get screenshots, pull down docs, etc., this is not a Computer Use / Operator service.
+
+Think of it like MCP-based remote control of a browser session, for pulling down documentation or other tasks while you code.
 
 ## Core Components
 
