@@ -11,6 +11,8 @@ import { browserCommandSchema } from "./types.ts";
 import type { Locator } from "playwright";
 import { getLogger, setupLogging } from "./logging.ts";
 import { getBrowserLaunchOptions, getConfig } from "./config.ts";
+import { dirname, join } from "https://deno.land/std@0.208.0/path/mod.ts";
+import { ensureDir } from "https://deno.land/std@0.208.0/fs/mod.ts";
 
 // Initialize logging early
 await setupLogging();
@@ -79,6 +81,8 @@ async function setupBrowser() {
       viewport: null, // Maintain this setting as it's not in config
       ignoreDefaultArgs: browserOptions.ignoreDefaultArgs,
       args: browserOptions.args,
+      // Configure download behavior
+      acceptDownloads: true,
     },
   );
 
@@ -229,6 +233,97 @@ async function getOrCreatePage(pageId: string) {
   return page;
 }
 
+// Trigger download based on the specified method
+async function triggerDownload(page: PageType, command: Extract<BrowserCommand, { action: "download" }>, attempt: number) {
+  const selector = command.selector;
+  const frame = command.frame;
+  const method = command.method;
+  const coordinates = command.coordinates;
+
+  switch (method) {
+    case "locator": {
+      const locator = getFrameLocator(page, selector, frame);
+      await locator.click();
+      break;
+    }
+
+    case "mouse": {
+      if (!coordinates) {
+        throw new Error("Mouse method requires coordinates");
+      }
+      await page.mouse.click(coordinates.x, coordinates.y);
+      break;
+    }
+
+    case "javascript": {
+      const expression = frame 
+        ? `document.querySelector('${selector}')?.click()`
+        : `document.querySelector('${selector}')?.click()`;
+      
+      if (frame) {
+        const frameHandle = page.frame(frame) || page.frame({ name: frame });
+        if (!frameHandle) {
+          throw new Error(`Frame "${frame}" not found`);
+        }
+        await frameHandle.evaluate(expression);
+      } else {
+        await page.evaluate(expression);
+      }
+      break;
+    }
+
+    case "all": {
+      // Try multiple methods like in your original sample
+      try {
+        // First try locator click
+        const locator = getFrameLocator(page, selector, frame);
+        await locator.click({ timeout: 5000 });
+      } catch (locatorError) {
+        logger.warn(`Locator click failed on attempt ${attempt}, trying alternatives`);
+        
+        // If coordinates provided, try mouse click + javascript
+        if (coordinates) {
+          await Promise.all([
+            page.mouse.click(coordinates.x, coordinates.y),
+            page.evaluate(`
+              const element = document.elementFromPoint(${coordinates.x}, ${coordinates.y});
+              if (element) {
+                element.click();
+                const clickEvent = new MouseEvent('click', {
+                  view: window,
+                  bubbles: true,
+                  cancelable: true,
+                  clientX: ${coordinates.x},
+                  clientY: ${coordinates.y}
+                });
+                element.dispatchEvent(clickEvent);
+              }
+            `)
+          ]);
+        } else {
+          // Try javascript click
+          const expression = `document.querySelector('${selector}')?.click()`;
+          if (frame) {
+            const frameHandle = page.frame(frame) || page.frame({ name: frame });
+            if (frameHandle) {
+              await frameHandle.evaluate(expression);
+            }
+          } else {
+            await page.evaluate(expression);
+          }
+        }
+      }
+      break;
+    }
+
+    default:
+      throw new Error(`Unsupported download method: ${method}`);
+  }
+  
+  // Small delay to ensure the download is triggered
+  await page.waitForTimeout(100);
+}
+
 // Execute a command on a specific page
 async function executeCommand(pageId: string, command: BrowserCommand) {
   if (isShuttingDown) {
@@ -342,6 +437,68 @@ async function executeCommand(pageId: string, command: BrowserCommand) {
           const result = await page.evaluate(command.params.expression);
           return { success: true, result };
         }
+      }
+
+      case "download": {
+        let attempts = 0;
+        let lastError: Error | null = null;
+        
+        while (attempts < command.maxAttempts) {
+          attempts++;
+          logger.info(`Download attempt ${attempts} of ${command.maxAttempts}`);
+          
+          try {
+            // Setup download path
+            const downloadPath = command.downloadPath || "./downloads";
+            await ensureDir(downloadPath);
+            
+            // Setup download promise before triggering
+            const downloadPromise = page.waitForEvent('download', { 
+              timeout: command.waitTimeout 
+            });
+            
+            // Trigger download based on method
+            await triggerDownload(page, command, attempts);
+            
+            // Wait for download
+            const download = await downloadPromise;
+            
+            // Determine filename
+            const originalName = download.suggestedFilename();
+            const fileName = command.fileName || originalName;
+            const fullPath = join(downloadPath, fileName);
+            
+            // Save the file
+            await download.saveAs(fullPath);
+            
+            // Verify file was saved
+            const fileInfo = await Deno.stat(fullPath);
+            
+            logger.info(`File downloaded successfully: ${fullPath} (${fileInfo.size} bytes)`);
+            
+            return {
+              success: true,
+              result: {
+                filePath: fullPath,
+                originalName,
+                fileName,
+                fileSize: fileInfo.size,
+                attempts,
+              },
+            };
+            
+          } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
+            logger.warn(`Download attempt ${attempts} failed: ${lastError.message}`);
+            
+            if (attempts < command.maxAttempts) {
+              // Wait before retry
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+          }
+        }
+        
+        throw new Error(`Download failed after ${command.maxAttempts} attempts. Last error: ${lastError?.message}`);
       }
 
       case "closePage":

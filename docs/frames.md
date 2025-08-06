@@ -226,3 +226,160 @@ Use JavaScript evaluation to check if frames are ready:
   }
 }
 ```
+
+## Download Support
+
+The browser proxy service supports downloading files from any page or frame with robust retry logic and multiple trigger methods.
+
+### Download Action
+
+The `download` action combines element triggering and file downloading into a single operation:
+
+```json
+{
+  "action": "download",
+  "selector": "#download-button",
+  "frame": "paymentFrame",
+  "downloadPath": "./reports",
+  "fileName": "statement.pdf",
+  "maxAttempts": 3,
+  "method": "locator",
+  "waitTimeout": 30000
+}
+```
+
+### Download Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `selector` | string | ✅ | - | CSS selector for download trigger element |
+| `frame` | string | ❌ | - | Target frame (same syntax as other actions) |
+| `downloadPath` | string | ❌ | `./downloads` | Directory to save downloaded files |
+| `fileName` | string | ❌ | original name | Custom filename for downloaded file |
+| `maxAttempts` | number | ❌ | `3` | Maximum retry attempts (1-10) |
+| `method` | enum | ❌ | `locator` | Trigger method: `locator`, `mouse`, `javascript`, `all` |
+| `coordinates` | object | ❌ | - | `{x, y}` coordinates for `mouse` method |
+| `waitTimeout` | number | ❌ | `30000` | Download timeout in milliseconds |
+
+### Trigger Methods
+
+#### Locator Method (Default)
+Standard Playwright locator-based clicking:
+```json
+{
+  "action": "download",
+  "selector": "#download-btn",
+  "method": "locator"
+}
+```
+
+#### Mouse Method
+Click at specific coordinates (useful for complex UI elements):
+```json
+{
+  "action": "download",
+  "selector": "#download-btn",
+  "method": "mouse",
+  "coordinates": {"x": 860, "y": 450}
+}
+```
+
+#### JavaScript Method
+Direct JavaScript click execution:
+```json
+{
+  "action": "download",
+  "selector": "#download-btn",
+  "method": "javascript"
+}
+```
+
+#### All Methods
+Try multiple approaches with automatic fallback:
+```json
+{
+  "action": "download",
+  "selector": "#download-btn",
+  "method": "all",
+  "coordinates": {"x": 860, "y": 450}
+}
+```
+
+### Banking PDF Downloads
+
+Example for downloading bank statements from frames:
+```json
+{
+  "action": "download",
+  "frame": "main",
+  "selector": "#export-pdf",
+  "downloadPath": "./bank-statements",
+  "fileName": "statement-2025-01.pdf",
+  "method": "all",
+  "coordinates": {"x": 860, "y": 450},
+  "maxAttempts": 5,
+  "waitTimeout": 45000
+}
+```
+
+### Response Format
+
+Successful downloads return detailed information:
+```json
+{
+  "success": true,
+  "result": {
+    "filePath": "./reports/statement.pdf",
+    "originalName": "export.pdf",
+    "fileName": "statement.pdf",
+    "fileSize": 1024000,
+    "attempts": 1
+  }
+}
+```
+
+### Error Handling
+
+Download failures include attempt information:
+```json
+{
+  "success": false,
+  "error": "Download failed after 3 attempts. Last error: Timeout waiting for download"
+}
+```
+
+### Best Practices
+
+1. **Use appropriate methods**: Start with `locator`, fall back to `all` for difficult elements
+2. **Set reasonable timeouts**: Banking sites may have slow PDF generation
+3. **Organize downloads**: Use `downloadPath` to separate different file types
+4. **Handle retries**: Set `maxAttempts` based on site reliability
+5. **Custom filenames**: Use `fileName` for consistent file naming
+6. **Frame awareness**: Downloads from frames work seamlessly with frame targeting
+
+### Common Patterns
+
+#### Retry with Multiple Methods
+```json
+{
+  "method": "all",
+  "maxAttempts": 5,
+  "coordinates": {"x": 860, "y": 450}
+}
+```
+
+#### Organized File Storage
+```json
+{
+  "downloadPath": "./downloads/statements/2025",
+  "fileName": "account-123-jan-2025.pdf"
+}
+```
+
+#### Frame-Based Downloads
+```json
+{
+  "frame": "reportFrame",
+  "selector": ".export-button[data-format='pdf']"
+}
+```

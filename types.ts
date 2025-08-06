@@ -55,6 +55,21 @@ export const closePageCommandSchema = baseCommandSchema.extend({
   action: z.literal("closePage"),
 });
 
+export const downloadCommandSchema = baseCommandSchema.extend({
+  action: z.literal("download"),
+  selector: z.string().min(1),
+  frame: z.string().optional(),
+  downloadPath: z.string().optional(),
+  fileName: z.string().optional(),
+  maxAttempts: z.number().min(1).max(10).default(3),
+  method: z.enum(["locator", "mouse", "javascript", "all"]).default("locator"),
+  coordinates: z.object({
+    x: z.number(),
+    y: z.number(),
+  }).optional(),
+  waitTimeout: z.number().positive().default(30000),
+});
+
 // Combine all command schemas into a discriminated union
 export const browserCommandSchema = z.discriminatedUnion("action", [
   gotoCommandSchema,
@@ -65,6 +80,7 @@ export const browserCommandSchema = z.discriminatedUnion("action", [
   titleCommandSchema,
   evaluateCommandSchema,
   closePageCommandSchema,
+  downloadCommandSchema,
 ]);
 
 // Infer the TypeScript type from the Zod schema
