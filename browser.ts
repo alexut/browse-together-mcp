@@ -471,7 +471,22 @@ async function executeCommand(pageId: string, command: BrowserCommand) {
               const maxSize = 50 * 1024 * 1024; // 50MB limit for content return
               let totalSize = 0;
               
-              const reader = readable.getReader();
+              // Convert Node.js stream to ReadableStream for Deno
+              const readableStream = new ReadableStream({
+                start(controller) {
+                  readable.on('data', (chunk: any) => {
+                    controller.enqueue(new Uint8Array(chunk));
+                  });
+                  readable.on('end', () => {
+                    controller.close();
+                  });
+                  readable.on('error', (err: Error) => {
+                    controller.error(err);
+                  });
+                }
+              });
+              
+              const reader = readableStream.getReader();
               try {
                 while (true) {
                   const { done, value } = await reader.read();
