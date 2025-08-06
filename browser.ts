@@ -448,10 +448,6 @@ async function executeCommand(pageId: string, command: BrowserCommand) {
           logger.info(`Download attempt ${attempts} of ${command.maxAttempts}`);
           
           try {
-            // Setup download path
-            const downloadPath = command.downloadPath || "./downloads";
-            await ensureDir(downloadPath);
-            
             // Setup download promise before triggering
             const downloadPromise = page.waitForEvent('download', { 
               timeout: command.waitTimeout 
@@ -463,29 +459,96 @@ async function executeCommand(pageId: string, command: BrowserCommand) {
             // Wait for download
             const download = await downloadPromise;
             
-            // Determine filename
+            // Get download info
             const originalName = download.suggestedFilename();
             const fileName = command.fileName || originalName;
-            const fullPath = join(downloadPath, fileName);
             
-            // Save the file
-            await download.saveAs(fullPath);
-            
-            // Verify file was saved
-            const fileInfo = await Deno.stat(fullPath);
-            
-            logger.info(`File downloaded successfully: ${fullPath} (${fileInfo.size} bytes)`);
-            
-            return {
-              success: true,
-              result: {
-                filePath: fullPath,
-                originalName,
-                fileName,
-                fileSize: fileInfo.size,
-                attempts,
-              },
-            };
+            // Handle content return vs file saving
+            if (command.returnContent) {
+              // Return content in response
+              const readable = await download.createReadStream();
+              const chunks: Uint8Array[] = [];
+              const maxSize = 50 * 1024 * 1024; // 50MB limit for content return
+              let totalSize = 0;
+              
+              const reader = readable.getReader();
+              try {
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  
+                  totalSize += value.length;
+                  if (totalSize > maxSize) {
+                    throw new Error(`File too large for content return: ${totalSize} bytes exceeds ${maxSize} bytes limit. Use downloadPath instead.`);
+                  }
+                  
+                  chunks.push(value);
+                }
+              } finally {
+                reader.releaseLock();
+              }
+              
+              // Combine chunks into single buffer
+              const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+              const buffer = new Uint8Array(totalLength);
+              let offset = 0;
+              for (const chunk of chunks) {
+                buffer.set(chunk, offset);
+                offset += chunk.length;
+              }
+              
+              // Convert based on encoding
+              let content: string | Uint8Array;
+              if (command.encoding === "base64") {
+                try {
+                  // Convert to base64 string
+                  const binaryString = String.fromCharCode(...buffer);
+                  content = btoa(binaryString);
+                } catch (conversionError) {
+                  throw new Error(`Failed to convert file to base64: ${conversionError}. File may be too large or contain invalid data.`);
+                }
+              } else {
+                content = buffer;
+              }
+              
+              logger.info(`File downloaded and returned as content: ${fileName} (${buffer.length} bytes)`);
+              
+              return {
+                success: true,
+                result: {
+                  content,
+                  originalName,
+                  fileName,
+                  fileSize: buffer.length,
+                  encoding: command.encoding,
+                  attempts,
+                },
+              };
+              
+            } else {
+              // Save to file (existing behavior)
+              const downloadPath = command.downloadPath || "./downloads";
+              await ensureDir(downloadPath);
+              const fullPath = join(downloadPath, fileName);
+              
+              await download.saveAs(fullPath);
+              
+              // Verify file was saved
+              const fileInfo = await Deno.stat(fullPath);
+              
+              logger.info(`File downloaded successfully: ${fullPath} (${fileInfo.size} bytes)`);
+              
+              return {
+                success: true,
+                result: {
+                  filePath: fullPath,
+                  originalName,
+                  fileName,
+                  fileSize: fileInfo.size,
+                  attempts,
+                },
+              };
+            }
             
           } catch (error) {
             lastError = error instanceof Error ? error : new Error(String(error));

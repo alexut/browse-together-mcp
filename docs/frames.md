@@ -254,12 +254,14 @@ The `download` action combines element triggering and file downloading into a si
 |-----------|------|----------|---------|-------------|
 | `selector` | string | ✅ | - | CSS selector for download trigger element |
 | `frame` | string | ❌ | - | Target frame (same syntax as other actions) |
-| `downloadPath` | string | ❌ | `./downloads` | Directory to save downloaded files |
+| `downloadPath` | string | ❌ | `./downloads` | Directory to save downloaded files (ignored if `returnContent: true`) |
 | `fileName` | string | ❌ | original name | Custom filename for downloaded file |
 | `maxAttempts` | number | ❌ | `3` | Maximum retry attempts (1-10) |
 | `method` | enum | ❌ | `locator` | Trigger method: `locator`, `mouse`, `javascript`, `all` |
 | `coordinates` | object | ❌ | - | `{x, y}` coordinates for `mouse` method |
 | `waitTimeout` | number | ❌ | `30000` | Download timeout in milliseconds |
+| `returnContent` | boolean | ❌ | `false` | Return file content in response instead of saving to disk |
+| `encoding` | enum | ❌ | `base64` | Content encoding: `base64` or `buffer` (only used with `returnContent`) |
 
 ### Trigger Methods
 
@@ -324,7 +326,7 @@ Example for downloading bank statements from frames:
 
 ### Response Format
 
-Successful downloads return detailed information:
+#### File Save Response (returnContent: false)
 ```json
 {
   "success": true,
@@ -333,6 +335,21 @@ Successful downloads return detailed information:
     "originalName": "export.pdf",
     "fileName": "statement.pdf",
     "fileSize": 1024000,
+    "attempts": 1
+  }
+}
+```
+
+#### Content Return Response (returnContent: true)
+```json
+{
+  "success": true,
+  "result": {
+    "content": "JVBERi0xLjQKJfbk/N8KMSAwIG9ia...",
+    "originalName": "export.pdf",
+    "fileName": "statement.pdf", 
+    "fileSize": 1024000,
+    "encoding": "base64",
     "attempts": 1
   }
 }
@@ -381,5 +398,74 @@ Download failures include attempt information:
 {
   "frame": "reportFrame",
   "selector": ".export-button[data-format='pdf']"
+}
+```
+
+#### Content Return for Wrapper Processing
+```json
+{
+  "selector": "#download-report",
+  "returnContent": true,
+  "encoding": "base64",
+  "maxAttempts": 3
+}
+```
+
+#### Large File Handling
+```json
+{
+  "selector": "#download-large-file",
+  "returnContent": false,
+  "downloadPath": "./temp-downloads",
+  "fileName": "large-report.pdf"
+}
+```
+
+### Content Return Limitations
+
+- **Size Limit**: Files larger than 50MB cannot use `returnContent: true`
+- **Memory Usage**: Content is held in memory until response is sent
+- **Encoding Overhead**: Base64 encoding increases size by ~33%
+- **Recommendation**: Use `returnContent: true` for smaller files (<10MB), save larger files to disk
+
+### Wrapper Integration Examples
+
+#### Processing Downloaded Content
+```javascript
+// Wrapper code example
+const response = await browserAction({
+  action: "download",
+  selector: "#export-btn", 
+  returnContent: true,
+  encoding: "base64"
+});
+
+if (response.success) {
+  const pdfBuffer = Buffer.from(response.result.content, 'base64');
+  // Process PDF buffer as needed
+  await fs.writeFile('./processed/' + response.result.fileName, pdfBuffer);
+}
+```
+
+#### Fallback Strategy
+```javascript
+// Try content return first, fallback to file save for large files
+try {
+  const response = await browserAction({
+    action: "download",
+    selector: "#export-btn",
+    returnContent: true
+  });
+  // Handle content directly
+} catch (error) {
+  if (error.message.includes("File too large")) {
+    // Fallback to file save
+    const response = await browserAction({
+      action: "download", 
+      selector: "#export-btn",
+      downloadPath: "./temp"
+    });
+    // Read file from disk
+  }
 }
 ```

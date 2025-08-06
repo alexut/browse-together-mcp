@@ -68,6 +68,8 @@ export const downloadCommandSchema = baseCommandSchema.extend({
     y: z.number(),
   }).optional(),
   waitTimeout: z.number().positive().default(30000),
+  returnContent: z.boolean().default(false),
+  encoding: z.enum(["base64", "buffer"]).default("base64"),
 });
 
 // Combine all command schemas into a discriminated union
