@@ -8,6 +8,7 @@ import { chromium } from "playwright-extra";
 import stealth from "puppeteer-extra-plugin-stealth";
 import type { BrowserCommand, BrowserContextType, PageType } from "./types.ts";
 import { browserCommandSchema } from "./types.ts";
+import type { Locator } from "playwright";
 import { getLogger, setupLogging } from "./logging.ts";
 import { getBrowserLaunchOptions, getConfig } from "./config.ts";
 
@@ -28,6 +29,25 @@ if (!config.BROWSER_API_TOKEN) {
 let browserContext: BrowserContextType | null = null;
 const pages: Record<string, PageType> = {};
 let isShuttingDown = false;
+
+// Frame locator helper function
+function getFrameLocator(page: PageType, selector: string, frame?: string): Locator {
+  if (frame) {
+    if (frame.includes('>>')) {
+      // Handle nested frames: "frame1 >> frame2"
+      const frames = frame.split('>>').map(f => f.trim());
+      let locator = page.frameLocator(frames[0]);
+      for (let i = 1; i < frames.length; i++) {
+        locator = locator.frameLocator(frames[i]);
+      }
+      return locator.locator(selector);
+    } else {
+      // Single frame
+      return page.frameLocator(frame).locator(selector);
+    }
+  }
+  return page.locator(selector);
+}
 
 // Setup the browser once at startup
 async function setupBrowser() {
@@ -231,13 +251,39 @@ async function executeCommand(pageId: string, command: BrowserCommand) {
           result: await page.goto(command.url, command.params),
         };
 
-      case "click":
-        await page.click(command.selector, command.params);
-        return { success: true };
+      case "click": {
+        try {
+          const locator = getFrameLocator(page, command.selector, command.frame);
+          await locator.click(command.params);
+          return { success: true };
+        } catch (error) {
+          if (command.frame && error instanceof Error && error.message.includes("frameLocator")) {
+            const availableFrames = page.frames()
+              .map(f => f.name() || f.url())
+              .filter(name => name)
+              .join(', ');
+            throw new Error(`Frame "${command.frame}" not found. Available frames: ${availableFrames}`);
+          }
+          throw error;
+        }
+      }
 
-      case "fill":
-        await page.fill(command.selector, command.text, command.params);
-        return { success: true };
+      case "fill": {
+        try {
+          const locator = getFrameLocator(page, command.selector, command.frame);
+          await locator.fill(command.text, command.params);
+          return { success: true };
+        } catch (error) {
+          if (command.frame && error instanceof Error && error.message.includes("frameLocator")) {
+            const availableFrames = page.frames()
+              .map(f => f.name() || f.url())
+              .filter(name => name)
+              .join(', ');
+            throw new Error(`Frame "${command.frame}" not found. Available frames: ${availableFrames}`);
+          }
+          throw error;
+        }
+      }
 
       case "screenshot": {
         const buffer = await page.screenshot(command.params);
@@ -250,17 +296,53 @@ async function executeCommand(pageId: string, command: BrowserCommand) {
         };
       }
 
-      case "content":
-        return { success: true, result: await page.content() };
+      case "content": {
+        if (command.frame) {
+          // Get content from specific frame
+          const frameHandle = page.frame(command.frame) || 
+                             page.frame({ name: command.frame }) ||
+                             page.frame({ url: new RegExp(command.frame) });
+          
+          if (frameHandle) {
+            const content = await frameHandle.content();
+            return { success: true, result: content };
+          } else {
+            // List available frames for helpful error message
+            const availableFrames = page.frames()
+              .map(f => f.name() || f.url())
+              .filter(name => name)
+              .join(', ');
+            throw new Error(`Frame "${command.frame}" not found. Available frames: ${availableFrames}`);
+          }
+        } else {
+          // Get main page content
+          return { success: true, result: await page.content() };
+        }
+      }
 
       case "title":
         return { success: true, result: await page.title() };
 
-      case "evaluate":
-        return {
-          success: true,
-          result: await page.evaluate(command.params.expression),
-        };
+      case "evaluate": {
+        if (command.frame) {
+          const frameHandle = page.frame(command.frame) || 
+                             page.frame({ name: command.frame });
+          if (frameHandle) {
+            const result = await frameHandle.evaluate(command.params.expression);
+            return { success: true, result };
+          } else {
+            // List available frames for helpful error message
+            const availableFrames = page.frames()
+              .map(f => f.name() || f.url())
+              .filter(name => name)
+              .join(', ');
+            throw new Error(`Frame "${command.frame}" not found. Available frames: ${availableFrames}`);
+          }
+        } else {
+          const result = await page.evaluate(command.params.expression);
+          return { success: true, result };
+        }
+      }
 
       case "closePage":
         await page.close();

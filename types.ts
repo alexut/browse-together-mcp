@@ -17,12 +17,14 @@ export const gotoCommandSchema = baseCommandSchema.extend({
 export const clickCommandSchema = baseCommandSchema.extend({
   action: z.literal("click"),
   selector: z.string().min(1),
+  frame: z.string().optional(),
   params: z.record(z.unknown()).optional(),
 });
 
 export const fillCommandSchema = baseCommandSchema.extend({
   action: z.literal("fill"),
   selector: z.string().min(1),
+  frame: z.string().optional(),
   text: z.string(),
   params: z.record(z.unknown()).optional(),
 });
@@ -34,6 +36,7 @@ export const screenshotCommandSchema = baseCommandSchema.extend({
 
 export const contentCommandSchema = baseCommandSchema.extend({
   action: z.literal("content"),
+  frame: z.string().optional(),
 });
 
 export const titleCommandSchema = baseCommandSchema.extend({
@@ -42,6 +45,7 @@ export const titleCommandSchema = baseCommandSchema.extend({
 
 export const evaluateCommandSchema = baseCommandSchema.extend({
   action: z.literal("evaluate"),
+  frame: z.string().optional(),
   params: z.object({
     expression: z.string().min(1),
   }).passthrough(),
